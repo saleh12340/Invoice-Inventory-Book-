@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.InvoiceWithItems
+import com.example.printer.PrinterConnectionState
 import com.example.ui.components.InteractiveReceiptView
 import com.example.ui.components.ReceiptBitmapHelper
 import com.example.ui.viewmodels.DualReceiptRow
@@ -34,12 +36,14 @@ fun InvoiceHistoryScreen(
     val invoicesWithItems by viewModel.allInvoices.collectAsState()
     val storeConfigState by viewModel.storeConfig.collectAsState()
     val storeConfig = storeConfigState ?: com.example.data.local.StoreConfigEntity()
+    val printerState by viewModel.printerState.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedInvoiceForDetail by remember { mutableStateOf<InvoiceWithItems?>(null) }
 
     val formatter = DecimalFormat("#,##0.##")
 
+    // Invoices are already sorted newest first by database query (invoiceId DESC)
     val filteredList = remember(invoicesWithItems, searchQuery) {
         if (searchQuery.isBlank()) invoicesWithItems
         else invoicesWithItems.filter {
@@ -56,7 +60,7 @@ fun InvoiceHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("سجل الفواتير المحفوظة", fontWeight = FontWeight.Bold) },
+                title = { Text("سجل الفواتير (مرتب حسب الأحدث)", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
                 )
@@ -132,7 +136,7 @@ fun InvoiceHistoryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "لا توجد فواتير مسجلة بعد.",
+                        text = "لا توجد فواتير مسجلة في السجل حتى الآن.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -190,30 +194,54 @@ fun InvoiceHistoryScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "التاريخ: ${inv.dateString} | الدفع: ${inv.paymentType}",
+                                        text = "التاريخ: ${inv.dateString} | الدفع: ${inv.paymentType} (${item.items.size} أصناف)",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
 
-                                    Row {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        // Edit in Editor Button
+                                        IconButton(
+                                            onClick = { onEditInvoice(item) },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "تعديل",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(17.dp)
+                                            )
+                                        }
+
+                                        // Print Button
                                         IconButton(
                                             onClick = {
-                                                val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
-                                                    context = context,
-                                                    storeConfig = storeConfig,
-                                                    invoiceNumber = inv.invoiceNumber,
-                                                    dateString = inv.dateString,
-                                                    customerName = inv.customerName,
-                                                    paymentType = inv.paymentType,
-                                                    items = item.items
-                                                )
-                                                viewModel.printInvoiceAsBitmap(bitmap)
+                                                try {
+                                                    val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
+                                                        context = context,
+                                                        storeConfig = storeConfig,
+                                                        invoiceNumber = inv.invoiceNumber,
+                                                        dateString = inv.dateString,
+                                                        customerName = inv.customerName,
+                                                        paymentType = inv.paymentType,
+                                                        items = item.items
+                                                    )
+                                                    if (printerState is PrinterConnectionState.Connected) {
+                                                        viewModel.printInvoiceAsBitmap(bitmap)
+                                                    } else {
+                                                        Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
+                                                        onNavigateToPrinterSetup()
+                                                    }
+                                                } catch (e: Throwable) {
+                                                    Toast.makeText(context, "خطأ في الطباعة: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                                }
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
-                                            Icon(Icons.Default.Print, contentDescription = "طباعة", modifier = Modifier.size(18.dp))
+                                            Icon(Icons.Default.Print, contentDescription = "طباعة", modifier = Modifier.size(17.dp))
                                         }
 
+                                        // Delete Button
                                         IconButton(
                                             onClick = { viewModel.deleteInvoice(inv.invoiceId) },
                                             modifier = Modifier.size(28.dp)
@@ -222,7 +250,7 @@ fun InvoiceHistoryScreen(
                                                 Icons.Default.Delete,
                                                 contentDescription = "حذف",
                                                 tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(18.dp)
+                                                modifier = Modifier.size(17.dp)
                                             )
                                         }
                                     }
@@ -241,16 +269,25 @@ fun InvoiceHistoryScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
-                            context = context,
-                            storeConfig = storeConfig,
-                            invoiceNumber = detail.invoice.invoiceNumber,
-                            dateString = detail.invoice.dateString,
-                            customerName = detail.invoice.customerName,
-                            paymentType = detail.invoice.paymentType,
-                            items = detail.items
-                        )
-                        viewModel.printInvoiceAsBitmap(bitmap)
+                        try {
+                            val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
+                                context = context,
+                                storeConfig = storeConfig,
+                                invoiceNumber = detail.invoice.invoiceNumber,
+                                dateString = detail.invoice.dateString,
+                                customerName = detail.invoice.customerName,
+                                paymentType = detail.invoice.paymentType,
+                                items = detail.items
+                            )
+                            if (printerState is PrinterConnectionState.Connected) {
+                                viewModel.printInvoiceAsBitmap(bitmap)
+                            } else {
+                                Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
+                                onNavigateToPrinterSetup()
+                            }
+                        } catch (e: Throwable) {
+                            Toast.makeText(context, "خطأ في الطباعة: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 ) {
                     Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -261,23 +298,27 @@ fun InvoiceHistoryScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
-                            context = context,
-                            storeConfig = storeConfig,
-                            invoiceNumber = detail.invoice.invoiceNumber,
-                            dateString = detail.invoice.dateString,
-                            customerName = detail.invoice.customerName,
-                            paymentType = detail.invoice.paymentType,
-                            items = detail.items
-                        )
-                        val uri = viewModel.getShareableImageUri(bitmap)
-                        if (uri != null) {
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "image/png"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        try {
+                            val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
+                                context = context,
+                                storeConfig = storeConfig,
+                                invoiceNumber = detail.invoice.invoiceNumber,
+                                dateString = detail.invoice.dateString,
+                                customerName = detail.invoice.customerName,
+                                paymentType = detail.invoice.paymentType,
+                                items = detail.items
+                            )
+                            val uri = viewModel.getShareableImageUri(bitmap)
+                            if (uri != null) {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "image/png"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(intent, "مشاركة الفاتورة"))
                             }
-                            context.startActivity(Intent.createChooser(intent, "مشاركة الفاتورة"))
+                        } catch (e: Throwable) {
+                            Toast.makeText(context, "خطأ: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {

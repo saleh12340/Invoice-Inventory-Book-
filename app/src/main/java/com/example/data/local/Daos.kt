@@ -27,7 +27,7 @@ data class InvoiceWithItems(
 @Dao
 interface InvoiceDao {
     @Transaction
-    @Query("SELECT * FROM invoices ORDER BY createdAtTimestamp DESC")
+    @Query("SELECT * FROM invoices ORDER BY invoiceId DESC, createdAtTimestamp DESC")
     fun getAllInvoicesWithItems(): Flow<List<InvoiceWithItems>>
 
     @Transaction
@@ -35,7 +35,7 @@ interface InvoiceDao {
     suspend fun getInvoiceById(id: Long): InvoiceWithItems?
 
     @Transaction
-    @Query("SELECT * FROM invoices WHERE customerName LIKE '%' || :query || '%' OR invoiceNumber LIKE '%' || :query || '%' ORDER BY createdAtTimestamp DESC")
+    @Query("SELECT * FROM invoices WHERE customerName LIKE '%' || :query || '%' OR invoiceNumber LIKE '%' || :query || '%' ORDER BY invoiceId DESC, createdAtTimestamp DESC")
     fun searchInvoices(query: String): Flow<List<InvoiceWithItems>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

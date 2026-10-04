@@ -154,20 +154,24 @@ fun NewInvoiceScreen(
                         // 2. Thermal Print Button
                         Button(
                             onClick = {
-                                val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
-                                    context = context,
-                                    storeConfig = storeConfig,
-                                    invoiceNumber = viewModel.invoiceNumber,
-                                    dateString = viewModel.dateString,
-                                    customerName = viewModel.customerName,
-                                    paymentType = viewModel.paymentType,
-                                    dualRows = viewModel.dualRows
-                                )
-                                if (printerState is PrinterConnectionState.Connected) {
-                                    viewModel.printInvoiceAsBitmap(bitmap)
-                                } else {
-                                    Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً", Toast.LENGTH_SHORT).show()
-                                    onNavigateToPrinterSetup()
+                                try {
+                                    val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
+                                        context = context,
+                                        storeConfig = storeConfig,
+                                        invoiceNumber = viewModel.invoiceNumber,
+                                        dateString = viewModel.dateString,
+                                        customerName = viewModel.customerName,
+                                        paymentType = viewModel.paymentType,
+                                        dualRows = viewModel.dualRows
+                                    )
+                                    if (printerState is PrinterConnectionState.Connected) {
+                                        viewModel.printInvoiceAsBitmap(bitmap)
+                                    } else {
+                                        Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
+                                        onNavigateToPrinterSetup()
+                                    }
+                                } catch (e: Throwable) {
+                                    Toast.makeText(context, "تعذر تجهيز الفاتورة للطباعة: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                                 }
                             },
                             modifier = Modifier.weight(1.3f),

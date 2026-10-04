@@ -211,20 +211,32 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 return@launch
             }
 
-            val grandTotal = calculateGrandTotal()
-            val invoiceEntity = InvoiceEntity(
-                invoiceNumber = invoiceNumber,
-                dateString = dateString,
-                customerName = customerName,
-                paymentType = paymentType,
-                subtotal = grandTotal,
-                grandTotal = grandTotal,
-                notes = notes
-            )
+            try {
+                val grandTotal = calculateGrandTotal()
+                val currentInvoiceNum = invoiceNumber
+                val invoiceEntity = InvoiceEntity(
+                    invoiceNumber = currentInvoiceNum,
+                    dateString = dateString,
+                    customerName = customerName,
+                    paymentType = paymentType,
+                    subtotal = grandTotal,
+                    grandTotal = grandTotal,
+                    notes = notes
+                )
 
-            val savedId = repository.saveInvoice(invoiceEntity, itemsToSave)
-            _uiEventMessage.value = "تم حفظ الفاتورة بنجاح برقم #$invoiceNumber"
-            onSuccess(savedId)
+                val savedId = repository.saveInvoice(invoiceEntity, itemsToSave)
+                _uiEventMessage.value = "تم حفظ الفاتورة بنجاح برقم #$currentInvoiceNum وحفظها في السجل!"
+
+                // Advance to next invoice number and prepare fresh row
+                invoiceNumber = repository.getNextInvoiceNumber()
+                customerName = ""
+                dualRows.clear()
+                dualRows.add(DualReceiptRow())
+
+                onSuccess(savedId)
+            } catch (e: Exception) {
+                _uiEventMessage.value = "حدث خطأ أثناء حفظ الفاتورة: ${e.localizedMessage}"
+            }
         }
     }
 
