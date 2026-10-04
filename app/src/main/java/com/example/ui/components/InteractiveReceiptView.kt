@@ -52,8 +52,11 @@ fun AutoSelectBasicTextField(
     placeholder: String = "",
     textAlign: TextAlign = TextAlign.Start
 ) {
+    var isFocusedState by remember { mutableStateOf(false) }
+
+    // Initial state: cursor at end, NO selection (so opening new invoice never selects all)
     var textFieldValue by remember {
-        mutableStateOf(TextFieldValue(text = value, selection = TextRange(0, value.length)))
+        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
     }
 
     LaunchedEffect(value) {
@@ -72,11 +75,21 @@ fun AutoSelectBasicTextField(
             onValueChange(newVal.text)
         },
         modifier = modifier.onFocusChanged { focusState ->
+            val justGainedFocus = focusState.isFocused && !isFocusedState
+            isFocusedState = focusState.isFocused
             onFocusChange(focusState.isFocused)
-            if (focusState.isFocused) {
-                // Auto-select all previous text upon click/focus for immediate replacement
+
+            if (justGainedFocus) {
+                // ONLY when user taps/clicks on a field with existing data, select it for overwrite
+                if (textFieldValue.text.isNotEmpty()) {
+                    textFieldValue = textFieldValue.copy(
+                        selection = TextRange(0, textFieldValue.text.length)
+                    )
+                }
+            } else if (!focusState.isFocused) {
+                // Clear selection highlight when losing focus
                 textFieldValue = textFieldValue.copy(
-                    selection = TextRange(0, textFieldValue.text.length)
+                    selection = TextRange(textFieldValue.text.length)
                 )
             }
         },

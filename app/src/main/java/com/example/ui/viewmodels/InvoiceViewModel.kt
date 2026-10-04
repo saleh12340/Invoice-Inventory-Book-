@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.backup.*
 import com.example.data.local.*
 import com.example.data.repository.InvoiceRepository
 import com.example.printer.BluetoothPrinterManager
@@ -44,6 +45,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val db = AppDatabase.getDatabase(application)
     val repository = InvoiceRepository(db)
     val bluetoothPrinterManager = BluetoothPrinterManager(application)
+    val backupManager = BackupManager(application, repository)
 
     val storeConfig = repository.storeConfig.stateIn(
         scope = viewModelScope,
@@ -351,6 +353,32 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.saveStoreConfig(config)
             _uiEventMessage.value = "تم حفظ إعدادات المحل/التاجر بنجاح"
+        }
+    }
+
+    fun createBackupJson(onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val json = backupManager.createBackupJson()
+                onResult(json)
+            } catch (e: Throwable) {
+                _uiEventMessage.value = "فشل في إنشاء النسخة الاحتياطية: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun restoreFromBackupJson(jsonString: String, onComplete: (BackupRestoreResult) -> Unit) {
+        viewModelScope.launch {
+            val result = backupManager.restoreFromJson(jsonString)
+            when (result) {
+                is BackupRestoreResult.Success -> {
+                    _uiEventMessage.value = "تم استعادة ${result.invoicesCount} فاتورة و ${result.productsCount} صنف بنجاح!"
+                }
+                is BackupRestoreResult.Error -> {
+                    _uiEventMessage.value = "فشل في الاستعادة: ${result.message}"
+                }
+            }
+            onComplete(result)
         }
     }
 }
