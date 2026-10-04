@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -15,10 +16,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.StoreConfigEntity
 import com.example.ui.viewmodels.DualReceiptRow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
 val ReceiptInkNavy = Color(0xFF1E3A8A)
@@ -50,9 +56,11 @@ fun AutoSelectBasicTextField(
     singleLine: Boolean = true,
     cursorBrush: Brush = SolidColor(ReceiptInkNavy),
     placeholder: String = "",
-    textAlign: TextAlign = TextAlign.Start
+    textAlign: TextAlign = TextAlign.Start,
+    focusRequester: FocusRequester? = null
 ) {
     var isFocusedState by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     // Initial state: cursor at end, NO selection (so opening new invoice never selects all)
     var textFieldValue by remember {
@@ -68,20 +76,25 @@ fun AutoSelectBasicTextField(
         }
     }
 
-    BasicTextField(
-        value = textFieldValue,
-        onValueChange = { newVal ->
-            textFieldValue = newVal
-            onValueChange(newVal.text)
-        },
-        modifier = modifier.onFocusChanged { focusState ->
+    // Crucial: When focused, select all existing text after Compose's touch event settles
+    LaunchedEffect(isFocusedState) {
+        if (isFocusedState && textFieldValue.text.isNotEmpty()) {
+            delay(50)
+            textFieldValue = textFieldValue.copy(
+                selection = TextRange(0, textFieldValue.text.length)
+            )
+        }
+    }
+
+    var baseModifier = modifier
+        .onFocusChanged { focusState ->
             val justGainedFocus = focusState.isFocused && !isFocusedState
             isFocusedState = focusState.isFocused
             onFocusChange(focusState.isFocused)
 
-            if (justGainedFocus) {
-                // ONLY when user taps/clicks on a field with existing data, select it for overwrite
-                if (textFieldValue.text.isNotEmpty()) {
+            if (justGainedFocus && textFieldValue.text.isNotEmpty()) {
+                coroutineScope.launch {
+                    delay(50)
                     textFieldValue = textFieldValue.copy(
                         selection = TextRange(0, textFieldValue.text.length)
                     )
@@ -92,7 +105,34 @@ fun AutoSelectBasicTextField(
                     selection = TextRange(textFieldValue.text.length)
                 )
             }
+        }
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onTap = {
+                    focusRequester?.requestFocus()
+                    if (textFieldValue.text.isNotEmpty()) {
+                        coroutineScope.launch {
+                            delay(50)
+                            textFieldValue = textFieldValue.copy(
+                                selection = TextRange(0, textFieldValue.text.length)
+                            )
+                        }
+                    }
+                }
+            )
+        }
+
+    if (focusRequester != null) {
+        baseModifier = baseModifier.focusRequester(focusRequester)
+    }
+
+    BasicTextField(
+        value = textFieldValue,
+        onValueChange = { newVal ->
+            textFieldValue = newVal
+            onValueChange(newVal.text)
         },
+        modifier = baseModifier,
         textStyle = textStyle,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
@@ -538,6 +578,7 @@ private fun RowScope.DataCell(
     placeholder: String = ""
 ) {
     var isFocused by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
 
     Box(
         modifier = Modifier
@@ -578,6 +619,7 @@ private fun RowScope.DataCell(
                 singleLine = true,
                 placeholder = placeholder,
                 textAlign = align,
+                focusRequester = focusRequester,
                 modifier = Modifier.fillMaxWidth()
             )
         } else {
