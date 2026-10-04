@@ -37,12 +37,12 @@ object ReceiptBitmapHelper {
         // Dynamic height calculation
         val rowHeight = 32f
         val headerHeight = 120f
-        val tableHeaderHeight = 34f
+        val tableHeaderHeight = 32f
         val tableHeight = activeRows.size * rowHeight
-        val subtotalsHeight = 32f
-        val grandTotalHeight = 44f
-        val footerHeight = 60f
-        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + subtotalsHeight + grandTotalHeight + footerHeight + 20f).toInt()
+        val subtotalsHeight = 24f
+        val grandTotalHeight = 28f
+        val compactFooterHeight = 20f
+        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + subtotalsHeight + grandTotalHeight + compactFooterHeight + 14f).toInt()
 
         val bitmap = Bitmap.createBitmap(widthPx, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -237,47 +237,52 @@ object ReceiptBitmapHelper {
             currentY += rowHeight
         }
 
-        // 6. Subtotals Row
+        // 6. Subtotals (كل شيء إجمالي لحاله)
         canvas.drawRect(padding, currentY, widthPx - padding, currentY + subtotalsHeight, fillLightPaint)
         canvas.drawLine(padding, currentY + subtotalsHeight, widthPx - padding, currentY + subtotalsHeight, strokePaint)
-
-        boldPaint.textSize = 13f
-        boldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("الإجمالي: ${formatter.format(rightSubtotal)}", rightStartX + (halfWidth / 2f), currentY + 20f, boldPaint)
-        canvas.drawText("الإجمالي: ${formatter.format(leftSubtotal)}", leftStartX + (halfWidth / 2f), currentY + 20f, boldPaint)
         canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + subtotalsHeight, strokePaint)
 
-        currentY += subtotalsHeight + 8f
-
-        // 7. Grand Total Box
-        val grandTotalRect = RectF(padding + 20f, currentY, widthPx - padding - 20f, currentY + 36f)
-        canvas.drawRoundRect(grandTotalRect, 4f, 4f, fillLightPaint)
-        canvas.drawRoundRect(grandTotalRect, 4f, 4f, strokePaint)
-
-        boldPaint.textSize = 15f
-        boldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("المبلغ الإجمالي الكلي:", grandTotalRect.right - 12f, currentY + 24f, boldPaint)
-
-        val grandTotalText = "${formatter.format(grandTotal)} ${storeConfig.currencySymbol}"
-        titlePaint.textSize = 17f
-        titlePaint.textAlign = Paint.Align.LEFT
-        canvas.drawText(grandTotalText, grandTotalRect.left + 12f, currentY + 24f, titlePaint)
-
-        currentY += 44f
-
-        // 8. Disclaimer & Signatures
-        textPaint.textSize = 11f
-        textPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText(storeConfig.defaultDisclaimerNote, widthPx / 2f, currentY + 12f, textPaint)
-
-        currentY += 24f
-
         boldPaint.textSize = 12f
-        boldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("توقيع البائع: ............", widthPx - padding - 20f, currentY + 14f, boldPaint)
+        boldPaint.color = inkNavy
+        boldPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText("إجمالي اليمين: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}", rightStartX + (halfWidth / 2f), currentY + 16f, boldPaint)
+        canvas.drawText("إجمالي اليسار: ${formatter.format(leftSubtotal)} ${storeConfig.currencySymbol}", leftStartX + (halfWidth / 2f), currentY + 16f, boldPaint)
 
-        boldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("توقيع المشتري: ............", padding + 20f, currentY + 14f, boldPaint)
+        currentY += subtotalsHeight + 2f
+
+        // 7. Grand Total Directly Underneath (وكذلك إجمالي عام للكل تحته)
+        canvas.drawRect(padding, currentY, widthPx - padding, currentY + grandTotalHeight, fillHeaderPaint)
+
+        val grandTotalLabel = "المبلغ الإجمالي العام (Grand Total):"
+        val grandTotalVal = "${formatter.format(grandTotal)} ${storeConfig.currencySymbol}"
+        val whiteGrandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.rgb(254, 240, 138)
+            textSize = 14f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.LEFT
+        }
+        val whiteLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = 12f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.RIGHT
+        }
+        canvas.drawText(grandTotalLabel, widthPx - padding - 8f, currentY + 19f, whiteLabelPaint)
+        canvas.drawText(grandTotalVal, padding + 8f, currentY + 19f, whiteGrandPaint)
+
+        currentY += grandTotalHeight + 3f
+
+        // 8. Ultra-Compact Signatures (تقليص توقيع المشتري وتوقيع البائع)
+        textPaint.textSize = 9.5f
+        textPaint.color = Color.DKGRAY
+        textPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("ت.البائع: ......", widthPx - padding - 8f, currentY + 12f, textPaint)
+
+        textPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText(storeConfig.defaultDisclaimerNote.take(30), widthPx / 2f, currentY + 12f, textPaint)
+
+        textPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("ت.المشتري: ......", padding + 8f, currentY + 12f, textPaint)
 
         return bitmap
     }

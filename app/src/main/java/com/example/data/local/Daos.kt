@@ -68,6 +68,9 @@ interface ProductDao {
     @Query("SELECT * FROM products_catalog ORDER BY name ASC")
     fun getAllProducts(): Flow<List<ProductCatalogEntity>>
 
+    @Query("SELECT * FROM products_catalog WHERE name = :name LIMIT 1")
+    suspend fun getProductByName(name: String): ProductCatalogEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProduct(product: ProductCatalogEntity): Long
 
