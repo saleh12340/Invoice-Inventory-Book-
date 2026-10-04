@@ -13,8 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.outlined.BluetoothSearching
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -207,7 +206,7 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 enabled = printerState is PrinterConnectionState.Connected
             ) {
-                Icon(Icons.Default.Print, contentDescription = null)
+                Icon(AppIcons.Print, contentDescription = null)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("طباعة فاتورة تجريبية كصورة", fontWeight = FontWeight.Bold)
             }
@@ -226,7 +225,7 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                 )
 
                 IconButton(onClick = { checkAndRequestPermissions() }) {
-                    Icon(Icons.Outlined.BluetoothSearching, contentDescription = "تحديث القائمة")
+                    Icon(AppIcons.Bluetooth, contentDescription = "تحديث القائمة")
                 }
             }
 
@@ -268,7 +267,7 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        Icons.Default.Print,
+                                        AppIcons.Print,
                                         contentDescription = null,
                                         tint = if (isCurrentConnected) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary
                                     )

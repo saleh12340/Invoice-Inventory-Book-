@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +24,7 @@ import com.example.data.local.StoreConfigEntity
 import com.example.printer.PrinterConnectionState
 import com.example.ui.components.InteractiveReceiptView
 import com.example.ui.components.ReceiptBitmapHelper
+import com.example.ui.theme.AppIcons
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
 
@@ -65,14 +65,14 @@ fun NewInvoiceScreen(
                 actions = {
                     // Quick Product Catalog Pick
                     IconButton(onClick = { showProductPickerSheet = true }) {
-                        Icon(Icons.Default.MenuBook, contentDescription = "دليل الأصناف")
+                        Icon(AppIcons.Category, contentDescription = "دليل الأصناف")
                     }
 
                     // Printer Status Indicator
                     IconButton(onClick = onNavigateToPrinterSetup) {
                         when (printerState) {
                             is PrinterConnectionState.Connected -> Icon(
-                                Icons.Filled.Print,
+                                AppIcons.Print,
                                 contentDescription = "الطابعة متصلة",
                                 tint = Color(0xFF16A34A)
                             )
@@ -81,7 +81,7 @@ fun NewInvoiceScreen(
                                 strokeWidth = 2.dp
                             )
                             else -> Icon(
-                                Icons.Outlined.PrintDisabled,
+                                AppIcons.PrintDisabled,
                                 contentDescription = "غير متصل بالطابعة",
                                 tint = MaterialTheme.colorScheme.error
                             )
@@ -146,7 +146,7 @@ fun NewInvoiceScreen(
                             contentPadding = PaddingValues(vertical = 8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(AppIcons.Save, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("حفظ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
@@ -178,7 +178,7 @@ fun NewInvoiceScreen(
                             contentPadding = PaddingValues(vertical = 8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A8A))
                         ) {
-                            Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("طباعة حرارية", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
@@ -301,7 +301,7 @@ fun NewInvoiceScreen(
                         viewModel.saveInvoiceImageToGallery(bitmap)
                     }
                 ) {
-                    Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("حفظ في الاستوديو")
                 }

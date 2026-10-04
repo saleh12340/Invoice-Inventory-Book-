@@ -23,12 +23,14 @@ import com.example.ui.screens.*
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodels.InvoiceViewModel
 
+import com.example.ui.theme.AppIcons
+
 enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector) {
-    NEW_INVOICE("جديدة", Icons.Filled.ReceiptLong, Icons.Outlined.ReceiptLong),
-    HISTORY("السجل", Icons.Filled.History, Icons.Outlined.History),
-    PRODUCTS("الأصناف", Icons.Filled.Category, Icons.Outlined.Category),
-    PRINTER("الطابعة", Icons.Filled.Print, Icons.Outlined.Print),
-    SETTINGS("المتجر", Icons.Filled.Store, Icons.Outlined.Store)
+    NEW_INVOICE("جديدة", AppIcons.Receipt, AppIcons.Receipt),
+    HISTORY("السجل", AppIcons.History, AppIcons.History),
+    PRODUCTS("الأصناف", AppIcons.Category, AppIcons.Category),
+    PRINTER("الطابعة", AppIcons.Print, AppIcons.Print),
+    SETTINGS("المتجر", AppIcons.Store, AppIcons.Store)
 }
 
 class MainActivity : ComponentActivity() {

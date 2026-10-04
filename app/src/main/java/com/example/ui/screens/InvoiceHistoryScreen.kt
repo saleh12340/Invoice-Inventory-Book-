@@ -21,6 +21,7 @@ import com.example.data.local.InvoiceWithItems
 import com.example.printer.PrinterConnectionState
 import com.example.ui.components.InteractiveReceiptView
 import com.example.ui.components.ReceiptBitmapHelper
+import com.example.ui.theme.AppIcons
 import com.example.ui.viewmodels.DualReceiptRow
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
@@ -238,7 +239,7 @@ fun InvoiceHistoryScreen(
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
-                                            Icon(Icons.Default.Print, contentDescription = "طباعة", modifier = Modifier.size(17.dp))
+                                            Icon(AppIcons.Print, contentDescription = "طباعة", modifier = Modifier.size(17.dp))
                                         }
 
                                         // Delete Button
@@ -290,7 +291,7 @@ fun InvoiceHistoryScreen(
                         }
                     }
                 ) {
-                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("طباعة حرارية")
                 }

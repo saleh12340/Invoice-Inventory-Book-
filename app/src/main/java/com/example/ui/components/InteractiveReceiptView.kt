@@ -9,19 +9,22 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,63 @@ val ReceiptInkNavy = Color(0xFF1E3A8A)
 val ReceiptInkBlueAccent = Color(0xFF1D4ED8)
 val ReceiptInkRed = Color(0xFFDC2626)
 val ReceiptPaperWhite = Color(0xFFFFFFFF)
+
+@Composable
+fun AutoSelectBasicTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = TextStyle.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    singleLine: Boolean = true,
+    cursorBrush: Brush = SolidColor(ReceiptInkNavy),
+    placeholder: String = "",
+    textAlign: TextAlign = TextAlign.Start
+) {
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = value, selection = TextRange(0, value.length)))
+    }
+
+    LaunchedEffect(value) {
+        if (value != textFieldValue.text) {
+            textFieldValue = textFieldValue.copy(
+                text = value,
+                selection = TextRange(value.length)
+            )
+        }
+    }
+
+    BasicTextField(
+        value = textFieldValue,
+        onValueChange = { newVal ->
+            textFieldValue = newVal
+            onValueChange(newVal.text)
+        },
+        modifier = modifier.onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+                // Automatically select all previous text when clicked or focused
+                textFieldValue = textFieldValue.copy(
+                    selection = TextRange(0, textFieldValue.text.length)
+                )
+            }
+        },
+        textStyle = textStyle,
+        keyboardOptions = keyboardOptions,
+        singleLine = singleLine,
+        cursorBrush = cursorBrush,
+        decorationBox = { innerTextField ->
+            if (textFieldValue.text.isEmpty() && placeholder.isNotEmpty()) {
+                Text(
+                    text = placeholder,
+                    fontSize = textStyle.fontSize,
+                    color = Color.Gray.copy(alpha = 0.6f),
+                    textAlign = textAlign
+                )
+            }
+            innerTextField()
+        }
+    )
+}
 
 @Composable
 fun InteractiveReceiptView(
@@ -76,7 +136,7 @@ fun InteractiveReceiptView(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. ULTRA-COMPACT STORE HEADER (Minimal single-strip bar to save maximum screen space)
+            // 1. ULTRA-COMPACT STORE HEADER
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,7 +146,7 @@ fun InteractiveReceiptView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Store Name & Phone (بقالة العزي مع رقم الجوال)
+                // Store Name & Phone
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" },
@@ -135,11 +195,11 @@ fun InteractiveReceiptView(
                     }
                 }
 
-                // Invoice Number & Date
+                // Invoice Number & Date with Auto-Select
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "رقم: ", fontSize = 8.5.sp, color = ReceiptInkNavy, fontWeight = FontWeight.Bold)
                     if (isEditable) {
-                        BasicTextField(
+                        AutoSelectBasicTextField(
                             value = invoiceNumber.toString(),
                             onValueChange = { onInvoiceNumberChange(it.toIntOrNull() ?: invoiceNumber) },
                             textStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Black, color = ReceiptInkRed),
@@ -155,7 +215,7 @@ fun InteractiveReceiptView(
 
                     Text(text = "التاريخ: ", fontSize = 8.5.sp, color = ReceiptInkNavy, fontWeight = FontWeight.Bold)
                     if (isEditable) {
-                        BasicTextField(
+                        AutoSelectBasicTextField(
                             value = dateString,
                             onValueChange = onDateStringChange,
                             textStyle = TextStyle(fontSize = 8.5.sp, fontWeight = FontWeight.Bold, color = Color.Black),
@@ -170,7 +230,7 @@ fun InteractiveReceiptView(
 
             Spacer(modifier = Modifier.height(3.dp))
 
-            // 2. CUSTOMER NAME LINE ("المطلوب من الأخ")
+            // 2. CUSTOMER NAME LINE ("المطلوب من الأخ") with Auto-Select
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,11 +245,12 @@ fun InteractiveReceiptView(
                     color = ReceiptInkNavy
                 )
                 if (isEditable) {
-                    BasicTextField(
+                    AutoSelectBasicTextField(
                         value = customerName,
                         onValueChange = onCustomerNameChange,
                         textStyle = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black),
                         singleLine = true,
+                        placeholder = "اكتب اسم العميل...",
                         cursorBrush = SolidColor(ReceiptInkNavy),
                         modifier = Modifier.weight(1f)
                     )
@@ -230,7 +291,7 @@ fun InteractiveReceiptView(
                 HeaderCell(text = "التفاصيل (البيان)", weight = 1.4f)
             }
 
-            // 4. DYNAMIC SMART ROWS (Starts with 1 row, expands automatically on typing in the last row)
+            // 4. DYNAMIC SMART ROWS with AUTO-SELECT ON FOCUS
             dualRows.forEachIndexed { index, row ->
                 Row(
                     modifier = Modifier
@@ -436,7 +497,7 @@ private fun RowScope.DataCell(
         }
     ) {
         if (isEditable) {
-            BasicTextField(
+            AutoSelectBasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 textStyle = TextStyle(
@@ -447,18 +508,8 @@ private fun RowScope.DataCell(
                 ),
                 keyboardOptions = if (isNumeric) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
                 singleLine = true,
-                cursorBrush = SolidColor(ReceiptInkNavy),
-                decorationBox = { innerTextField ->
-                    if (value.isEmpty() && placeholder.isNotEmpty()) {
-                        Text(
-                            text = placeholder,
-                            fontSize = 8.5.sp,
-                            color = Color.Gray.copy(alpha = 0.6f),
-                            textAlign = align
-                        )
-                    }
-                    innerTextField()
-                },
+                placeholder = placeholder,
+                textAlign = align,
                 modifier = Modifier.fillMaxWidth()
             )
         } else {

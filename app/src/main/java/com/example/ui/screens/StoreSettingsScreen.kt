@@ -3,9 +3,6 @@ package com.example.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.StoreConfigEntity
+import com.example.ui.theme.AppIcons
 import com.example.ui.viewmodels.InvoiceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +57,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                     )
                     viewModel.updateStoreConfig(updated)
                 },
-                icon = { Icon(Icons.Default.Save, contentDescription = null) },
+                icon = { Icon(AppIcons.Save, contentDescription = null) },
                 text = { Text("حفظ الإعدادات", fontWeight = FontWeight.Bold) }
             )
         }
@@ -94,7 +92,7 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                         placeholder = { Text("مثال: محلات فايز مثنى وإخوانه") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Store, contentDescription = null) }
+                        leadingIcon = { Icon(AppIcons.Store, contentDescription = null) }
                     )
 
                     OutlinedTextField(
