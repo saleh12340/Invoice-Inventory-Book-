@@ -28,21 +28,20 @@ object ThermalImageConverter {
         original: Bitmap,
         targetWidthDots: Int = 384 // Default 384px for 58mm POS printer
     ): Bitmap {
-        val aspectRatio = original.height.toFloat() / original.width.toFloat()
-        val targetHeight = (targetWidthDots * aspectRatio).toInt()
-
-        val scaledBitmap = Bitmap.createScaledBitmap(original, targetWidthDots, targetHeight, true)
-        val bwBitmap = Bitmap.createBitmap(targetWidthDots, targetHeight, Bitmap.Config.ARGB_8888)
-
-        val canvas = Canvas(bwBitmap)
-        val paint = Paint().apply {
-            colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
+        val scaledBitmap = if (original.width != targetWidthDots) {
+            val aspectRatio = original.height.toFloat() / original.width.toFloat()
+            val targetHeight = (targetWidthDots * aspectRatio).toInt()
+            Bitmap.createScaledBitmap(original, targetWidthDots, targetHeight, true)
+        } else {
+            original
         }
-        canvas.drawBitmap(scaledBitmap, 0f, 0f, paint)
 
-        // Thresholding to crisp black and white for thermal paper
-        val pixels = IntArray(targetWidthDots * targetHeight)
-        bwBitmap.getPixels(pixels, 0, targetWidthDots, 0, 0, targetWidthDots, targetHeight)
+        val width = scaledBitmap.width
+        val height = scaledBitmap.height
+        val bwBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+        val pixels = IntArray(width * height)
+        scaledBitmap.getPixels(pixels, 0, width, 0, 0, width, height)
 
         for (i in pixels.indices) {
             val pixel = pixels[i]
@@ -50,10 +49,11 @@ object ThermalImageConverter {
             val g = Color.green(pixel)
             val b = Color.blue(pixel)
             val gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
-            pixels[i] = if (gray < 160) Color.BLACK else Color.WHITE
+            // High-contrast threshold: Ensures every stroke of Arabic text is printed solid jet black
+            pixels[i] = if (gray < 210) Color.BLACK else Color.WHITE
         }
 
-        bwBitmap.setPixels(pixels, 0, targetWidthDots, 0, 0, targetWidthDots, targetHeight)
+        bwBitmap.setPixels(pixels, 0, width, 0, 0, width, height)
         return bwBitmap
     }
 
