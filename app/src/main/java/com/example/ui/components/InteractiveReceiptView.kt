@@ -173,6 +173,8 @@ fun InteractiveReceiptView(
     onUpdateLeftTotalAmount: (index: Int, total: String) -> Unit,
     onRemoveRow: (index: Int) -> Unit,
     onAddManualRow: () -> Unit,
+    customerSuggestions: List<String> = emptyList(),
+    onCustomerSuggestionClick: (String) -> Unit = {},
     isEditable: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -343,7 +345,30 @@ fun InteractiveReceiptView(
                 }
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            if (isEditable && customerSuggestions.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    customerSuggestions.take(4).forEach { suggestion ->
+                        Surface(
+                            modifier = Modifier.clickable { onCustomerSuggestionClick(suggestion) },
+                            shape = RoundedCornerShape(10.dp),
+                            color = ReceiptInkNavy.copy(alpha = 0.08f)
+                        ) {
+                            Text(
+                                text = suggestion,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ReceiptInkBlueAccent,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+            }
 
             // 3. TABLE HEADER: ORDER FROM RIGHT TO LEFT (HIGH VISIBILITY)
             // Right Section: [ القيمة | العدد | التفاصيل ]
