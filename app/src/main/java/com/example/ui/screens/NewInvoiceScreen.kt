@@ -90,11 +90,6 @@ fun NewInvoiceScreen(
                             fontSize = 15.sp,
                             color = NeuTextPrimary
                         )
-                        Text(
-                            text = "",
-                            fontSize = 1.sp,
-                            color = Color.Transparent
-                        )
                     }
 
                     Row(
@@ -653,11 +648,6 @@ fun QuickItemEntryCard(
                         fontSize = 13.5.sp,
                         color = NeuTextPrimary
                     )
-                    Text(
-                        text = "",
-                        fontSize = 1.sp,
-                        color = Color.Transparent
-                    )
                 }
             }
 
@@ -840,12 +830,6 @@ fun QuickItemEntryCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = "",
-                    fontSize = 1.sp,
-                    color = Color.Transparent,
-                    fontWeight = FontWeight.Medium
-                )
                 NeuInsetBox(
                     modifier = Modifier.width(95.dp),
                     shape = RoundedCornerShape(8.dp)
