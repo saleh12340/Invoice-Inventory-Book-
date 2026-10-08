@@ -358,9 +358,10 @@ fun InteractiveReceiptView(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // RIGHT SECTION (RTL: Total -> Qty -> Desc)
-                HeaderCell(text = "القيمة", weight = 0.8f)
-                HeaderCell(text = "العدد", weight = 0.35f)
-                HeaderCell(text = "التفاصيل (البيان)", weight = 1.35f)
+                HeaderCell(text = "القيمة", weight = 0.72f)
+                HeaderCell(text = "سعر الوحدة", weight = 0.72f)
+                HeaderCell(text = "العدد", weight = 0.42f)
+                HeaderCell(text = "الصنف", weight = 1.18f)
 
                 // High-visibility vertical separator
                 Box(modifier = Modifier.width(1.5.dp).height(14.dp).background(Color.White))
@@ -578,7 +579,7 @@ private fun RowScope.HeaderCell(text: String, weight: Float) {
         text = text,
         modifier = Modifier.weight(weight),
         color = Color.White,
-        fontSize = 7.5.sp,
+        fontSize = 9.sp,
         fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Center
     )
@@ -603,7 +604,7 @@ private fun RowScope.DataCell(
     Box(
         modifier = Modifier
             .weight(weight)
-            .height(if (subBadge != null) 31.dp else 28.dp)
+            .height(if (subBadge != null) 40.dp else 36.dp)
             .padding(horizontal = 0.8.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(
@@ -638,7 +639,7 @@ private fun RowScope.DataCell(
                     onValueChange = onValueChange,
                     onFocusChange = { isFocused = it },
                     textStyle = TextStyle(
-                        fontSize = 9.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = if (isFocused) FontWeight.Bold else fontWeight,
                         color = if (isFocused) ReceiptInkBlueAccent else textColor,
                         textAlign = align
@@ -654,7 +655,7 @@ private fun RowScope.DataCell(
             } else {
                 Text(
                     text = value,
-                    fontSize = 9.sp,
+                    fontSize = 10.5.sp,
                     fontWeight = fontWeight,
                     color = textColor,
                     textAlign = align,
@@ -666,11 +667,11 @@ private fun RowScope.DataCell(
             if (!subBadge.isNullOrBlank()) {
                 Text(
                     text = subBadge,
-                    fontSize = 6.5.sp,
+                    fontSize = 7.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = ReceiptInkBlueAccent,
                     maxLines = 1,
-                    lineHeight = 7.5.sp
+                    lineHeight = 9.sp
                 )
             }
         }
