@@ -696,7 +696,7 @@ fun QuickItemEntryCard(
             ) {
                 Column {
                     Text(
-                        text = "البيان (اسم الصنف)",
+                        text = "",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeuTextSecondary
@@ -718,7 +718,7 @@ fun QuickItemEntryCard(
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (itemName.isEmpty()) {
-                                Text("اسم الصنف...", fontSize = 11.5.sp, color = NeuTextMuted)
+                                Text("الصنف", fontSize = 11.5.sp, color = NeuTextMuted)
                             }
                             inner()
                         }
@@ -733,8 +733,8 @@ fun QuickItemEntryCard(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "العدد",
-                        fontSize = 9.sp,
+                        text = "",
+                        fontSize = 1.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeuTextSecondary
                     )
@@ -778,8 +778,8 @@ fun QuickItemEntryCard(
             ) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "الإجمالي",
-                        fontSize = 9.sp,
+                        text = "",
+                        fontSize = 1.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeuTextSecondary
                     )
@@ -809,7 +809,7 @@ fun QuickItemEntryCard(
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (totalAmountStr.isEmpty()) {
-                                Text("0.0", fontSize = 11.5.sp, color = NeuTextMuted, textAlign = TextAlign.End)
+                                Text("المبلغ", fontSize = 11.5.sp, color = NeuTextMuted, textAlign = TextAlign.End)
                             }
                             inner()
                         }
