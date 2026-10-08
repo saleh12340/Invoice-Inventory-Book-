@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.local.StoreConfigEntity
 import com.example.printer.PrinterConnectionState
 import com.example.ui.components.InteractiveReceiptView
+import com.example.ui.components.AutoSelectBasicTextField
 import com.example.ui.components.ReceiptBitmapHelper
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
@@ -90,9 +91,9 @@ fun NewInvoiceScreen(
                             color = NeuTextPrimary
                         )
                         Text(
-                            text = "نظام الفواتير الذكي والمبيعات",
-                            fontSize = 11.sp,
-                            color = NeuTextSecondary
+                            text = "",
+                            fontSize = 1.sp,
+                            color = Color.Transparent
                         )
                     }
 
@@ -647,15 +648,15 @@ fun QuickItemEntryCard(
                 }
                 Column {
                     Text(
-                        text = "إدخال سريع ذكي للأصناف",
+                        text = "إضافة صنف",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.5.sp,
                         color = NeuTextPrimary
                     )
                     Text(
-                        text = "مرتب كالفاتورة مع استنتاج فوري لسعر الواحدة",
-                        fontSize = 10.sp,
-                        color = NeuTextSecondary
+                        text = "",
+                        fontSize = 1.sp,
+                        color = Color.Transparent
                     )
                 }
             }
@@ -787,7 +788,7 @@ fun QuickItemEntryCard(
             ) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "المبلغ الإجمالي",
+                        text = "الإجمالي",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color = NeuTextSecondary
@@ -840,9 +841,9 @@ fun QuickItemEntryCard(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "أو أدخل سعر الحبة مباشرة:",
-                    fontSize = 10.sp,
-                    color = NeuTextSecondary,
+                    text = "",
+                    fontSize = 1.sp,
+                    color = Color.Transparent,
                     fontWeight = FontWeight.Medium
                 )
                 NeuInsetBox(
