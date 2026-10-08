@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -68,18 +69,18 @@ fun NewInvoiceScreen(
     Scaffold(
         containerColor = NeuBackground,
         topBar = {
-            // Neumorphic Top Bar
+            // Compressed Neumorphic Top Bar: smaller icons, raised higher
             Surface(
                 color = NeuSurfaceRaised,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .clip(RoundedCornerShape(14.dp))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -87,42 +88,42 @@ fun NewInvoiceScreen(
                         Text(
                             text = "فاتورة #${viewModel.invoiceNumber} - ${storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" }}",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
+                            fontSize = 13.5.sp,
                             color = NeuTextPrimary
                         )
                     }
 
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 1. Quick Product Catalog Pick
                         NeuCircleButton(
                             onClick = { showProductPickerSheet = true },
-                            size = 38.dp
+                            size = 28.dp
                         ) {
                             Icon(
                                 AppIcons.Category,
                                 contentDescription = "دليل الأصناف",
                                 tint = NeuAccentBlue,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                         }
 
                         // 2. Printer Status Indicator
                         NeuCircleButton(
                             onClick = onNavigateToPrinterSetup,
-                            size = 38.dp
+                            size = 28.dp
                         ) {
                             when (printerState) {
                                 is PrinterConnectionState.Connected -> Icon(
                                     AppIcons.Print,
                                     contentDescription = "الطابعة متصلة",
                                     tint = NeuSuccess,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                                 is PrinterConnectionState.Connecting -> CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(12.dp),
                                     strokeWidth = 2.dp,
                                     color = NeuAccentBlue
                                 )
@@ -130,7 +131,7 @@ fun NewInvoiceScreen(
                                     AppIcons.PrintDisabled,
                                     contentDescription = "غير متصل بالطابعة",
                                     tint = NeuError,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                             }
                         }
@@ -138,13 +139,13 @@ fun NewInvoiceScreen(
                         // 3. Reset Form
                         NeuCircleButton(
                             onClick = { viewModel.resetForm() },
-                            size = 38.dp
+                            size = 28.dp
                         ) {
                             Icon(
                                 Icons.Default.Refresh,
                                 contentDescription = "فاتورة جديدة",
                                 tint = NeuTextPrimary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
@@ -252,14 +253,12 @@ fun NewInvoiceScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 1. QUICK ITEM ENTRY & SMART UNIT PRICE CALCULATION CARD (AT TOP OF PAGE)
+            // 1. QUICK ITEM ENTRY RULER ROW (AT TOP OF PAGE)
             item {
-                QuickItemEntryCard(
-                    storeConfig = storeConfig,
-                    allProducts = allProducts,
+                QuickItemRulerBar(
                     onAddItem = { name, qty, tot ->
                         viewModel.addQuickItem(name, qty, tot)
                     }
@@ -577,9 +576,7 @@ fun NewInvoiceScreen(
 }
 
 @Composable
-fun QuickItemEntryCard(
-    storeConfig: StoreConfigEntity,
-    allProducts: List<com.example.data.local.ProductCatalogEntity>,
+fun QuickItemRulerBar(
     onAddItem: (name: String, quantity: String, total: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -587,13 +584,14 @@ fun QuickItemEntryCard(
 
     var itemName by remember { mutableStateOf("") }
     var quantityStr by remember { mutableStateOf("1") }
-    var totalAmountStr by remember { mutableStateOf("") }
     var unitPriceStr by remember { mutableStateOf("") }
-    var lastEditedField by remember { mutableStateOf("TOTAL") }
+    var totalAmountStr by remember { mutableStateOf("") }
+    var lastEditedField by remember { mutableStateOf("TOTAL") } // "TOTAL" or "UNIT"
 
     val currentQty = quantityStr.toDoubleOrNull() ?: 1.0
 
-    val deducedUnitPrice = remember(quantityStr, totalAmountStr, unitPriceStr, lastEditedField) {
+    // Deduce unit price or total based on user inputs
+    val calculatedUnitPrice = remember(quantityStr, totalAmountStr, unitPriceStr, lastEditedField) {
         if (lastEditedField == "UNIT") {
             unitPriceStr.toDoubleOrNull() ?: 0.0
         } else {
@@ -602,7 +600,7 @@ fun QuickItemEntryCard(
         }
     }
 
-    val deducedTotal = remember(quantityStr, totalAmountStr, unitPriceStr, lastEditedField) {
+    val calculatedTotal = remember(quantityStr, totalAmountStr, unitPriceStr, lastEditedField) {
         if (lastEditedField == "UNIT") {
             val up = unitPriceStr.toDoubleOrNull() ?: 0.0
             up * currentQty
@@ -611,308 +609,194 @@ fun QuickItemEntryCard(
         }
     }
 
-    NeuCard(
+    val submitItem = {
+        val finalTot = if (lastEditedField == "UNIT" && calculatedTotal > 0.0) {
+            formatter.format(calculatedTotal)
+        } else {
+            totalAmountStr
+        }
+        if (itemName.isNotBlank() || finalTot.isNotBlank()) {
+            onAddItem(itemName, quantityStr, finalTot)
+            itemName = ""
+            quantityStr = "1"
+            unitPriceStr = ""
+            totalAmountStr = ""
+            lastEditedField = "TOTAL"
+        }
+    }
+
+    // 1. Single Horizontal Ruler Row - No labels above, only smart disappearing placeholders
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        elevation = 6.dp,
-        contentPadding = PaddingValues(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        color = NeuSurfaceRaised,
+        shadowElevation = 2.dp,
+        border = BorderStroke(0.8.dp, NeuAccentBlue.copy(alpha = 0.25f))
     ) {
-        // 1. Header with icon, title and deduced unit price pill
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(NeuAccentBlue.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = AppIcons.Receipt,
-                        contentDescription = null,
-                        tint = NeuAccentBlue,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                Column {
-                    Text(
-                        text = "إضافة صنف",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.5.sp,
-                        color = NeuTextPrimary
-                    )
-                }
-            }
-
-            // Real-time Unit Price Display Badge
-            if (deducedUnitPrice > 0.0) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = NeuAccentBlue.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, NeuAccentBlue.copy(alpha = 0.35f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "سعر الواحدة:",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = NeuTextSecondary
-                        )
-                        Text(
-                            text = "${formatter.format(deducedUnitPrice)} ${storeConfig.currencySymbol}",
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Black,
-                            color = NeuAccentBlue
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // 2. Invoice Input Boxes (Arranged RTL as in the invoice table)
-        // [ البيان (اسم الصنف) ] [ العدد ] [ القيمة (المبلغ الإجمالي) ]
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Field 1: البيان (اسم الصنف) - 48% weight
-            NeuInsetBox(
-                modifier = Modifier.weight(1.3f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeuTextSecondary
-                    )
-                    BasicTextField(
-                        value = itemName,
-                        onValueChange = { itemName = it },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeuTextPrimary
-                        ),
-                        cursorBrush = SolidColor(NeuAccentBlue),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        decorationBox = { inner ->
-                            if (itemName.isEmpty()) {
-                                Text("الصنف", fontSize = 11.5.sp, color = NeuTextMuted)
-                            }
-                            inner()
-                        }
-                    )
-                }
-            }
-
-            // Field 2: العدد (الكمية) - 22% weight
-            NeuInsetBox(
-                modifier = Modifier.weight(0.6f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "",
-                        fontSize = 1.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeuTextSecondary
-                    )
-                    BasicTextField(
-                        value = quantityStr,
-                        onValueChange = {
-                            quantityStr = it
-                            if (lastEditedField == "UNIT" && unitPriceStr.isNotBlank()) {
-                                val up = unitPriceStr.toDoubleOrNull() ?: 0.0
-                                val q = it.toDoubleOrNull() ?: 1.0
-                                totalAmountStr = if (up * q > 0) formatter.format(up * q) else ""
-                            }
-                        },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Black,
-                            color = NeuAccentBlue,
-                            textAlign = TextAlign.Center
-                        ),
-                        cursorBrush = SolidColor(NeuAccentBlue),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = ImeAction.Next
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        decorationBox = { inner ->
-                            if (quantityStr.isEmpty()) {
-                                Text("1", fontSize = 12.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
-                            }
-                            inner()
-                        }
-                    )
-                }
-            }
-
-            // Field 3: القيمة (المبلغ الإجمالي) - 30% weight
-            NeuInsetBox(
-                modifier = Modifier.weight(0.9f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "",
-                        fontSize = 1.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeuTextSecondary
-                    )
-                    BasicTextField(
-                        value = totalAmountStr,
-                        onValueChange = {
-                            totalAmountStr = it
-                            lastEditedField = "TOTAL"
-                            val tot = it.toDoubleOrNull()
-                            val q = quantityStr.toDoubleOrNull() ?: 1.0
-                            if (tot != null && q > 0) {
-                                unitPriceStr = formatter.format(tot / q)
-                            }
-                        },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeuTextPrimary,
-                            textAlign = TextAlign.End
-                        ),
-                        cursorBrush = SolidColor(NeuAccentBlue),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Decimal,
-                            imeAction = ImeAction.Done
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        decorationBox = { inner ->
-                            if (totalAmountStr.isEmpty()) {
-                                Text("المبلغ", fontSize = 11.5.sp, color = NeuTextMuted, textAlign = TextAlign.End)
-                            }
-                            inner()
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Optional row: Direct unit-price entry / quick calculation toggle
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                NeuInsetBox(
-                    modifier = Modifier.width(95.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    BasicTextField(
-                        value = unitPriceStr,
-                        onValueChange = {
-                            unitPriceStr = it
-                            lastEditedField = "UNIT"
-                            val up = it.toDoubleOrNull()
-                            val q = quantityStr.toDoubleOrNull() ?: 1.0
-                            if (up != null && q > 0) {
-                                totalAmountStr = formatter.format(up * q)
-                            }
-                        },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeuAccentBlue,
-                            textAlign = TextAlign.Center
-                        ),
-                        cursorBrush = SolidColor(NeuAccentBlue),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
-                        decorationBox = { inner ->
-                            if (unitPriceStr.isEmpty()) {
-                                Text("سعر الواحدة", fontSize = 9.sp, color = NeuTextMuted, textAlign = TextAlign.Center)
-                            }
-                            inner()
-                        }
-                    )
-                }
-            }
-
-            if (currentQty > 1.0 && deducedUnitPrice > 0.0) {
-                Text(
-                    text = "(${quantityStr} × ${formatter.format(deducedUnitPrice)} = ${formatter.format(deducedTotal)})",
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = NeuTextSecondary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 3. WIDE ADD BUTTON ("زر الاضافه بشكل عريض")
-        val effectiveTotal = if (lastEditedField == "UNIT" && deducedTotal > 0.0) deducedTotal.toString() else totalAmountStr
-        NeuButton(
-            onClick = {
-                val tot = if (lastEditedField == "UNIT" && deducedTotal > 0.0) deducedTotal.toString() else totalAmountStr
-                if (itemName.isNotBlank() || tot.isNotBlank()) {
-                    onAddItem(itemName, quantityStr, tot)
-                    itemName = ""
-                    quantityStr = "1"
-                    totalAmountStr = ""
-                    unitPriceStr = ""
-                    lastEditedField = "TOTAL"
-                }
-            },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp),
-            isPrimary = true,
-            shape = RoundedCornerShape(14.dp)
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.AddCircle,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(18.dp)
+            // 1. مربع البيان (اسم الصنف)
+            SmartRulerInputBox(
+                value = itemName,
+                onValueChange = { itemName = it },
+                placeholder = "البيان",
+                modifier = Modifier.weight(1.35f),
+                isNumeric = false,
+                align = TextAlign.Start,
+                imeAction = ImeAction.Next
             )
-            Spacer(modifier = Modifier.width(6.dp))
-            val btnLabel = if (deducedUnitPrice > 0.0) {
-                "+ إضافة الصنف إلى الفاتورة (سعر الواحدة: ${formatter.format(deducedUnitPrice)} ${storeConfig.currencySymbol})"
+
+            // 2. مربع العدد (الكمية)
+            SmartRulerInputBox(
+                value = quantityStr,
+                onValueChange = {
+                    quantityStr = it
+                    val q = it.toDoubleOrNull() ?: 1.0
+                    if (lastEditedField == "UNIT" && unitPriceStr.isNotBlank()) {
+                        val up = unitPriceStr.toDoubleOrNull() ?: 0.0
+                        totalAmountStr = if (up * q > 0) formatter.format(up * q) else ""
+                    } else if (totalAmountStr.isNotBlank()) {
+                        val tot = totalAmountStr.toDoubleOrNull() ?: 0.0
+                        unitPriceStr = if (q > 0) formatter.format(tot / q) else ""
+                    }
+                },
+                placeholder = "العدد",
+                modifier = Modifier.weight(0.60f),
+                isNumeric = true,
+                align = TextAlign.Center,
+                imeAction = ImeAction.Next
+            )
+
+            // 3. مربع سعر الواحدة (يستنتج تلقائياً أو يدخل مباشرة)
+            val displayUnitPrice = if (lastEditedField == "TOTAL" && calculatedUnitPrice > 0.0) {
+                formatter.format(calculatedUnitPrice)
             } else {
-                "+ إضافة الصنف إلى الفاتورة"
+                unitPriceStr
             }
-            Text(
-                text = btnLabel,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.5.sp,
-                color = Color.White
+            SmartRulerInputBox(
+                value = displayUnitPrice,
+                onValueChange = {
+                    unitPriceStr = it
+                    lastEditedField = "UNIT"
+                    val up = it.toDoubleOrNull()
+                    val q = quantityStr.toDoubleOrNull() ?: 1.0
+                    if (up != null && q > 0) {
+                        totalAmountStr = formatter.format(up * q)
+                    }
+                },
+                placeholder = "السعر",
+                modifier = Modifier.weight(0.80f),
+                isNumeric = true,
+                align = TextAlign.Center,
+                imeAction = ImeAction.Next,
+                textColor = NeuAccentBlue
+            )
+
+            // 4. مربع المبلغ (الإجمالي)
+            val displayTotal = if (lastEditedField == "UNIT" && calculatedTotal > 0.0) {
+                formatter.format(calculatedTotal)
+            } else {
+                totalAmountStr
+            }
+            SmartRulerInputBox(
+                value = displayTotal,
+                onValueChange = {
+                    totalAmountStr = it
+                    lastEditedField = "TOTAL"
+                    val tot = it.toDoubleOrNull()
+                    val q = quantityStr.toDoubleOrNull() ?: 1.0
+                    if (tot != null && q > 0) {
+                        unitPriceStr = formatter.format(tot / q)
+                    }
+                },
+                placeholder = "المبلغ",
+                modifier = Modifier.weight(0.85f),
+                isNumeric = true,
+                align = TextAlign.Center,
+                imeAction = ImeAction.Done,
+                onDone = { submitItem() }
+            )
+
+            // 5. زر الإضافة الذكي الدائري / الكبسولة
+            Surface(
+                onClick = { submitItem() },
+                shape = RoundedCornerShape(10.dp),
+                color = NeuAccentBlue,
+                shadowElevation = 2.dp,
+                modifier = Modifier.size(width = 42.dp, height = 34.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "إضافة الصنف",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmartRulerInputBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    isNumeric: Boolean = false,
+    align: TextAlign = TextAlign.Start,
+    imeAction: ImeAction = ImeAction.Next,
+    onDone: () -> Unit = {},
+    textColor: Color = NeuTextPrimary
+) {
+    var isFocused by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = modifier.height(34.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = if (isFocused) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
+        border = BorderStroke(
+            width = if (isFocused) 1.4.dp else 0.8.dp,
+            color = if (isFocused) NeuAccentBlue else Color(0xFFCBD5E1)
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp),
+            contentAlignment = when (align) {
+                TextAlign.Start -> Alignment.CenterStart
+                TextAlign.End -> Alignment.CenterEnd
+                else -> Alignment.Center
+            }
+        ) {
+            AutoSelectBasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                onFocusChange = { isFocused = it },
+                textStyle = TextStyle(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isFocused) NeuAccentBlue else textColor,
+                    textAlign = align
+                ),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isNumeric) KeyboardType.Decimal else KeyboardType.Text,
+                    imeAction = imeAction
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { onDone() }
+                ),
+                singleLine = true,
+                placeholder = placeholder,
+                textAlign = align,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

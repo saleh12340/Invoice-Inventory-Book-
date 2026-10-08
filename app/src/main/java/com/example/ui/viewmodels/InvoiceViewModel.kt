@@ -84,11 +84,17 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     private val _uiEventMessage = MutableStateFlow<String?>(null)
     val uiEventMessage: StateFlow<String?> = _uiEventMessage.asStateFlow()
 
+    companion object {
+        const val DEFAULT_ROW_COUNT = 6
+    }
+
     init {
         viewModelScope.launch {
             invoiceNumber = repository.getNextInvoiceNumber()
             if (dualRows.isEmpty()) {
-                dualRows.add(DualReceiptRow()) // Starts with 1 empty row only!
+                repeat(DEFAULT_ROW_COUNT) {
+                    dualRows.add(DualReceiptRow())
+                }
             }
         }
     }
@@ -105,7 +111,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             paymentType = "نقداً"
             notes = ""
             dualRows.clear()
-            dualRows.add(DualReceiptRow()) // Starts with 1 row only!
+            repeat(DEFAULT_ROW_COUNT) {
+                dualRows.add(DualReceiptRow())
+            }
         }
     }
 
@@ -190,6 +198,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 customerName = "عميل نقدي"
             }
             val itemsToSave = mutableListOf<InvoiceItemEntity>()
+            // Right side items first (from top to bottom)
             dualRows.forEach { row ->
                 if (row.hasRightData) {
                     val q = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
@@ -204,6 +213,9 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                         )
                     )
                 }
+            }
+            // Left side items next (from top to bottom)
+            dualRows.forEach { row ->
                 if (row.hasLeftData) {
                     val q = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
                     val tot = row.leftTotal
@@ -240,11 +252,13 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 val savedId = repository.saveInvoice(invoiceEntity, itemsToSave)
                 _uiEventMessage.value = "تم حفظ الفاتورة بنجاح برقم #$currentInvoiceNum وحفظها في السجل!"
 
-                // Advance to next invoice number and prepare fresh row
+                // Advance to next invoice number and prepare fresh 6 rows
                 invoiceNumber = repository.getNextInvoiceNumber()
                 customerName = ""
                 dualRows.clear()
-                dualRows.add(DualReceiptRow())
+                repeat(DEFAULT_ROW_COUNT) {
+                    dualRows.add(DualReceiptRow())
+                }
 
                 onSuccess(savedId)
             } catch (e: Exception) {
@@ -371,22 +385,33 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun addCatalogProductToInvoice(name: String, price: Double) {
         val priceStr = if (price > 0) price.toString() else ""
-        val lastIdx = dualRows.lastIndex
-        if (lastIdx >= 0) {
-            val last = dualRows[lastIdx]
-            if (!last.hasRightData) {
-                dualRows[lastIdx] = last.copy(rightDescription = name, rightTotalAmountStr = priceStr)
-                dualRows.add(DualReceiptRow())
-            } else if (!last.hasLeftData) {
-                dualRows[lastIdx] = last.copy(leftDescription = name, leftTotalAmountStr = priceStr)
-                dualRows.add(DualReceiptRow())
-            } else {
-                dualRows.add(DualReceiptRow(rightDescription = name, rightTotalAmountStr = priceStr))
-                dualRows.add(DualReceiptRow())
+        
+        // 1. Fill empty RIGHT slot from top to bottom
+        var placed = false
+        for (i in dualRows.indices) {
+            val row = dualRows[i]
+            if (!row.hasRightData) {
+                dualRows[i] = row.copy(rightDescription = name, rightTotalAmountStr = priceStr)
+                placed = true
+                break
             }
-        } else {
+        }
+
+        // 2. When RIGHT side is full, transfer to LEFT slot from top to bottom
+        if (!placed) {
+            for (i in dualRows.indices) {
+                val row = dualRows[i]
+                if (!row.hasLeftData) {
+                    dualRows[i] = row.copy(leftDescription = name, leftTotalAmountStr = priceStr)
+                    placed = true
+                    break
+                }
+            }
+        }
+
+        // 3. When both sides of all rows are full, add a new row
+        if (!placed) {
             dualRows.add(DualReceiptRow(rightDescription = name, rightTotalAmountStr = priceStr))
-            dualRows.add(DualReceiptRow())
         }
         _uiEventMessage.value = "تم إدراج الصنف في الفاتورة"
     }
@@ -396,6 +421,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         val cleanQty = quantityStr.trim().ifEmpty { "1" }
         val cleanTot = totalAmountStr.trim().ifEmpty { "0" }
 
+        // 1. Fill empty RIGHT slot from top to bottom
         var placed = false
         for (i in dualRows.indices) {
             val row = dualRows[i]
@@ -407,17 +433,26 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
                 )
                 placed = true
                 break
-            } else if (!row.hasLeftData) {
-                dualRows[i] = row.copy(
-                    leftDescription = cleanName,
-                    leftQuantityStr = cleanQty,
-                    leftTotalAmountStr = cleanTot
-                )
-                placed = true
-                break
             }
         }
 
+        // 2. When RIGHT column is full, transfer and fill LEFT slot from top to bottom
+        if (!placed) {
+            for (i in dualRows.indices) {
+                val row = dualRows[i]
+                if (!row.hasLeftData) {
+                    dualRows[i] = row.copy(
+                        leftDescription = cleanName,
+                        leftQuantityStr = cleanQty,
+                        leftTotalAmountStr = cleanTot
+                    )
+                    placed = true
+                    break
+                }
+            }
+        }
+
+        // 3. When both columns of all existing rows are full, append a new row
         if (!placed) {
             dualRows.add(
                 DualReceiptRow(
@@ -428,9 +463,6 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
             )
         }
 
-        if (!dualRows.last().isCompletelyEmpty) {
-            dualRows.add(DualReceiptRow())
-        }
         _uiEventMessage.value = "تمت إضافة الصنف $cleanName بنجاح!"
     }
 
