@@ -196,7 +196,7 @@ fun InteractiveReceiptView(
             .clip(RoundedCornerShape(18.dp))
             .background(ReceiptPaperWhite)
             .border(1.dp, Color(0xFFCBD5E1).copy(alpha = 0.70f), RoundedCornerShape(18.dp))
-            .padding(5.dp)
+            .padding(horizontal = 4.dp, vertical = 3.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -208,7 +208,7 @@ fun InteractiveReceiptView(
                     .fillMaxWidth()
                     .background(ReceiptInkNavy.copy(alpha = 0.05f))
                     .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.5f), RoundedCornerShape(3.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                    .padding(horizontal = 4.dp, vertical = 1.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -267,7 +267,7 @@ fun InteractiveReceiptView(
                     if (isEditable) {
                         Box(
                             modifier = Modifier
-                                .border(0.6.dp, ReceiptInkRed.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
+                                .border(0.6.dp, ReceiptInkRed.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 2.dp)
                         ) {
                             AutoSelectBasicTextField(
@@ -315,12 +315,12 @@ fun InteractiveReceiptView(
                     .fillMaxWidth()
                     .background(Color(0xFFF8FAFC))
                      .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                    .padding(horizontal = 4.dp, vertical = 0.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "العميل:",
-                    fontSize = 9.sp,
+                    text = "",
+                    fontSize = 1.sp,
                     fontWeight = FontWeight.Bold,
                     color = ReceiptInkNavy
                 )
@@ -330,7 +330,7 @@ fun InteractiveReceiptView(
                         onValueChange = onCustomerNameChange,
                         textStyle = TextStyle(fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color.Black),
                         singleLine = true,
-                        placeholder = "اسم العميل...",
+                        placeholder = "العميل",
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         cursorBrush = SolidColor(ReceiptInkNavy),
                         modifier = Modifier.weight(1f)
@@ -358,8 +358,8 @@ fun InteractiveReceiptView(
                         ) {
                             Text(
                                 text = suggestion,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                fontSize = 8.5.sp,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ReceiptInkBlueAccent,
                                 maxLines = 1
@@ -379,14 +379,14 @@ fun InteractiveReceiptView(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
                     .background(ReceiptInkNavy)
-                    .padding(vertical = 2.dp),
+                    .padding(vertical = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // RIGHT SECTION (RTL: Total -> Qty -> Desc)
-                HeaderCell(text = "القيمة", weight = 0.72f)
-                HeaderCell(text = "سعر الوحدة", weight = 0.72f)
+                HeaderCell(text = "المبلغ", weight = 0.70f)
+                HeaderCell(text = "السعر", weight = 0.70f)
                 HeaderCell(text = "العدد", weight = 0.42f)
-                HeaderCell(text = "الصنف", weight = 1.18f)
+                HeaderCell(text = "الصنف", weight = 1.12f)
 
                 // High-visibility vertical separator
                 Box(modifier = Modifier.width(1.5.dp).height(14.dp).background(Color.White))
@@ -447,7 +447,7 @@ fun InteractiveReceiptView(
                         value = row.rightDescription,
                         onValueChange = { onUpdateRightDescription(index, it) },
                         isEditable = isEditable,
-                        weight = 1.18f,
+                        weight = 1.12f,
                         align = TextAlign.Start,
                         placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "الصنف" else "",
                         subBadge = null,
@@ -457,7 +457,7 @@ fun InteractiveReceiptView(
                     )
 
                     // Vertical Divider between dual columns
-                    Box(modifier = Modifier.width(1.5.dp).height(if (rightBadge != null || leftBadge != null) 28.dp else 24.dp).background(ReceiptInkNavy.copy(alpha = 0.35f)))
+                    Box(modifier = Modifier.width(1.5.dp).height(30.dp).background(ReceiptInkNavy.copy(alpha = 0.35f)))
 
                     // LEFT SECTION CELLS
                     DataCell(
