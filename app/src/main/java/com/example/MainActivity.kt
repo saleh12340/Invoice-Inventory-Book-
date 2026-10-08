@@ -34,6 +34,7 @@ enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, va
     NEW_INVOICE("جديدة", AppIcons.Receipt, AppIcons.Receipt),
     HISTORY("السجل", AppIcons.History, AppIcons.History),
     PRODUCTS("الأصناف", AppIcons.Category, AppIcons.Category),
+    CUSTOMERS("العملاء", AppIcons.Person, AppIcons.Person),
     PRINTER("الطابعة", AppIcons.Print, AppIcons.Print),
     SETTINGS("المتجر", AppIcons.Store, AppIcons.Store)
 }
@@ -169,6 +170,7 @@ fun MainAppContent(viewModel: InvoiceViewModel) {
                     onNavigateToPrinterSetup = { currentTab = NavigationScreen.PRINTER }
                 )
                 NavigationScreen.PRODUCTS -> ProductsCatalogScreen(viewModel = viewModel)
+                NavigationScreen.CUSTOMERS -> CustomersScreen(viewModel = viewModel)
                 NavigationScreen.PRINTER -> PrinterSetupScreen(viewModel = viewModel)
                 NavigationScreen.SETTINGS -> StoreSettingsScreen(viewModel = viewModel)
             }
