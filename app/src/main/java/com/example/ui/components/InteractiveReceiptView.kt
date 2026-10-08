@@ -391,22 +391,23 @@ fun InteractiveReceiptView(
                 // High-visibility vertical separator
                 Box(modifier = Modifier.width(1.5.dp).height(14.dp).background(Color.White))
 
-                // LEFT SECTION (RTL: Total -> Qty -> Desc)
-                HeaderCell(text = "القيمة", weight = 0.8f)
-                HeaderCell(text = "العدد", weight = 0.35f)
-                HeaderCell(text = "التفاصيل (البيان)", weight = 1.35f)
+                // LEFT SECTION (RTL: Total -> Unit -> Qty -> Item)
+                HeaderCell(text = "القيمة", weight = 0.72f)
+                HeaderCell(text = "سعر الوحدة", weight = 0.72f)
+                HeaderCell(text = "العدد", weight = 0.42f)
+                HeaderCell(text = "الصنف", weight = 1.18f)
             }
 
             // 4. DATA ROWS WITH CRISP GRID CELLS AND TOUCH HIGHLIGHTS
             dualRows.forEachIndexed { index, row ->
                 val rightQty = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
                 val rightTot = row.rightTotalAmountStr.toDoubleOrNull() ?: 0.0
-                val rightUnitPrice = if (rightQty > 1.0 && rightTot > 0.0) rightTot / rightQty else 0.0
+                val rightUnitPrice = if (rightQty > 0.0 && rightTot > 0.0) rightTot / rightQty else 0.0
                 val rightBadge = if (rightUnitPrice > 0.0) "سعر الحبة: ${formatter.format(rightUnitPrice)}" else null
 
                 val leftQty = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
                 val leftTot = row.leftTotalAmountStr.toDoubleOrNull() ?: 0.0
-                val leftUnitPrice = if (leftQty > 1.0 && leftTot > 0.0) leftTot / leftQty else 0.0
+                val leftUnitPrice = if (leftQty > 0.0 && leftTot > 0.0) leftTot / leftQty else 0.0
                 val leftBadge = if (leftUnitPrice > 0.0) "سعر الحبة: ${formatter.format(leftUnitPrice)}" else null
 
                 Row(
@@ -427,13 +428,6 @@ fun InteractiveReceiptView(
                         placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "0" else ""
                     )
                     DataCell(
-                        value = row.rightQuantityStr,
-                        onValueChange = { onUpdateRightQuantity(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.42f,
-                        isNumeric = true
-                    )
-                    DataCell(
                         value = if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "",
                         onValueChange = {},
                         isEditable = false,
@@ -441,6 +435,13 @@ fun InteractiveReceiptView(
                         isNumeric = true,
                         textColor = ReceiptInkBlueAccent,
                         fontWeight = FontWeight.Bold
+                    )
+                    DataCell(
+                        value = row.rightQuantityStr,
+                        onValueChange = { onUpdateRightQuantity(index, it) },
+                        isEditable = isEditable,
+                        weight = 0.42f,
+                        isNumeric = true
                     )
                     DataCell(
                         value = row.rightDescription,
