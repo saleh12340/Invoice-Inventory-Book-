@@ -395,7 +395,7 @@ fun InteractiveReceiptView(
                         value = row.rightTotalAmountStr,
                         onValueChange = { onUpdateRightTotalAmount(index, it) },
                         isEditable = isEditable,
-                        weight = 0.8f,
+                        weight = 0.72f,
                         isNumeric = true,
                         textColor = ReceiptInkNavy,
                         fontWeight = FontWeight.Bold,
@@ -405,17 +405,26 @@ fun InteractiveReceiptView(
                         value = row.rightQuantityStr,
                         onValueChange = { onUpdateRightQuantity(index, it) },
                         isEditable = isEditable,
-                        weight = 0.35f,
+                        weight = 0.42f,
                         isNumeric = true
+                    )
+                    DataCell(
+                        value = if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "",
+                        onValueChange = {},
+                        isEditable = false,
+                        weight = 0.72f,
+                        isNumeric = true,
+                        textColor = ReceiptInkBlueAccent,
+                        fontWeight = FontWeight.Bold
                     )
                     DataCell(
                         value = row.rightDescription,
                         onValueChange = { onUpdateRightDescription(index, it) },
                         isEditable = isEditable,
-                        weight = 1.35f,
+                        weight = 1.18f,
                         align = TextAlign.Start,
                         placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "اكتب صنف..." else "",
-                        subBadge = rightBadge
+                        subBadge = null
                     )
 
                     // Vertical Divider between dual columns
@@ -426,25 +435,34 @@ fun InteractiveReceiptView(
                         value = row.leftTotalAmountStr,
                         onValueChange = { onUpdateLeftTotalAmount(index, it) },
                         isEditable = isEditable,
-                        weight = 0.8f,
+                        weight = 0.72f,
                         isNumeric = true,
                         textColor = ReceiptInkNavy,
+                        fontWeight = FontWeight.Bold
+                    )
+                    DataCell(
+                        value = if (leftUnitPrice > 0.0) formatter.format(leftUnitPrice) else "",
+                        onValueChange = {},
+                        isEditable = false,
+                        weight = 0.72f,
+                        isNumeric = true,
+                        textColor = ReceiptInkBlueAccent,
                         fontWeight = FontWeight.Bold
                     )
                     DataCell(
                         value = row.leftQuantityStr,
                         onValueChange = { onUpdateLeftQuantity(index, it) },
                         isEditable = isEditable,
-                        weight = 0.35f,
+                        weight = 0.42f,
                         isNumeric = true
                     )
                     DataCell(
                         value = row.leftDescription,
                         onValueChange = { onUpdateLeftDescription(index, it) },
                         isEditable = isEditable,
-                        weight = 1.35f,
+                        weight = 1.18f,
                         align = TextAlign.Start,
-                        subBadge = leftBadge
+                        subBadge = null
                     )
                 }
             }
