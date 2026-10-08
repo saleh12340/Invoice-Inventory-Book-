@@ -30,6 +30,9 @@ import com.example.ui.components.ReceiptBitmapHelper
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import com.example.ui.util.toEnglishDigits
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +50,7 @@ fun InvoiceHistoryScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedInvoiceForDetail by remember { mutableStateOf<InvoiceWithItems?>(null) }
 
-    val formatter = DecimalFormat("#,##0.##")
+    val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
     val filteredList = remember(invoicesWithItems, searchQuery) {
         if (searchQuery.isBlank()) invoicesWithItems

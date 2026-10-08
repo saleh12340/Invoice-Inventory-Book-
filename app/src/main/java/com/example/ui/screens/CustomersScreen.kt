@@ -18,6 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import com.example.ui.util.toEnglishDigits
 
 @Composable
 fun CustomersScreen(viewModel: InvoiceViewModel) {
@@ -25,7 +28,7 @@ fun CustomersScreen(viewModel: InvoiceViewModel) {
     val config by viewModel.storeConfig.collectAsState()
     var query by remember { mutableStateOf("") }
     var selectedCustomer by remember { mutableStateOf<String?>(null) }
-    val formatter = remember { DecimalFormat("#,##0.##") }
+    val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
     val customers = remember(invoices, query) {
         invoices

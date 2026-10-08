@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.ui.util.toEnglishDigits
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,8 +36,8 @@ data class DualReceiptRow(
     var leftQuantityStr: String = "1",
     var leftTotalAmountStr: String = ""
 ) {
-    val rightTotal: Double get() = rightTotalAmountStr.toDoubleOrNull() ?: 0.0
-    val leftTotal: Double get() = leftTotalAmountStr.toDoubleOrNull() ?: 0.0
+    val rightTotal: Double get() = rightTotalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+    val leftTotal: Double get() = leftTotalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
     val hasRightData: Boolean get() = rightDescription.isNotBlank() || rightTotalAmountStr.isNotBlank()
     val hasLeftData: Boolean get() = leftDescription.isNotBlank() || leftTotalAmountStr.isNotBlank()
     val isCompletelyEmpty: Boolean get() = !hasRightData && !hasLeftData
@@ -69,14 +70,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     val printerState: StateFlow<PrinterConnectionState> = bluetoothPrinterManager.connectionState
 
-    // Form State for Current Invoice
+    // Form State for Current Invoice (English digits for numbers and dates)
     var invoiceNumber by mutableStateOf(1001)
-    var dateString by mutableStateOf(SimpleDateFormat("yyyy/MM/dd", Locale("ar")).format(Date()))
+    var dateString by mutableStateOf(SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date()))
     var customerName by mutableStateOf("")
     var paymentType by mutableStateOf("نقداً") // "نقداً" or "أجل"
     var notes by mutableStateOf("")
 
-    // Smart expanding dual-column rows: Starts with EXACTLY ONE ROW
+    // Smart expanding dual-column rows: Starts with DEFAULT_ROW_COUNT
     val dualRows = mutableStateListOf<DualReceiptRow>()
 
     var searchQuery by mutableStateOf("")
@@ -106,7 +107,7 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
     fun resetForm() {
         viewModelScope.launch {
             invoiceNumber = repository.getNextInvoiceNumber()
-            dateString = SimpleDateFormat("yyyy/MM/dd", Locale("ar")).format(Date())
+            dateString = SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date())
             customerName = ""
             paymentType = "نقداً"
             notes = ""
@@ -145,14 +146,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateRightQuantity(index: Int, qty: String) {
         if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(rightQuantityStr = qty)
+            dualRows[index] = dualRows[index].copy(rightQuantityStr = qty.toEnglishDigits())
             checkAutoExpand(index)
         }
     }
 
     fun updateRightTotalAmount(index: Int, total: String) {
         if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(rightTotalAmountStr = total)
+            dualRows[index] = dualRows[index].copy(rightTotalAmountStr = total.toEnglishDigits())
             checkAutoExpand(index)
         }
     }
@@ -166,14 +167,14 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateLeftQuantity(index: Int, qty: String) {
         if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(leftQuantityStr = qty)
+            dualRows[index] = dualRows[index].copy(leftQuantityStr = qty.toEnglishDigits())
             checkAutoExpand(index)
         }
     }
 
     fun updateLeftTotalAmount(index: Int, total: String) {
         if (index in dualRows.indices) {
-            dualRows[index] = dualRows[index].copy(leftTotalAmountStr = total)
+            dualRows[index] = dualRows[index].copy(leftTotalAmountStr = total.toEnglishDigits())
             checkAutoExpand(index)
         }
     }
@@ -418,8 +419,8 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun addQuickItem(name: String, quantityStr: String, totalAmountStr: String) {
         val cleanName = name.trim().ifEmpty { "صنف" }
-        val cleanQty = quantityStr.trim().ifEmpty { "1" }
-        val cleanTot = totalAmountStr.trim().ifEmpty { "0" }
+        val cleanQty = quantityStr.trim().toEnglishDigits().ifEmpty { "1" }
+        val cleanTot = totalAmountStr.trim().toEnglishDigits().ifEmpty { "0" }
 
         // 1. Fill empty RIGHT slot from top to bottom
         var placed = false

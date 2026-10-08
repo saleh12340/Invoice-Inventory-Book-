@@ -6,10 +6,13 @@ import com.example.data.local.InvoiceItemEntity
 import com.example.data.local.StoreConfigEntity
 import com.example.ui.viewmodels.DualReceiptRow
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import com.example.ui.util.toEnglishDigits
 
 object ReceiptBitmapHelper {
 
-    private val formatter = DecimalFormat("#,##0.##")
+    private val formatter = DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US))
 
     /**
      * Renders a crisp, high-contrast 2-column receipt without heavy table boxes or gridlines.
@@ -122,7 +125,8 @@ object ReceiptBitmapHelper {
         canvas.drawText(storeName, widthPx - padding, currentY + (20f * scale), titlePaint)
 
         // Store phone
-        val phoneText = "ج: ${storeConfig.phone1.ifEmpty { "772437314" }}"
+        // Store phone (English digits)
+        val phoneText = "ج: ${storeConfig.phone1.ifEmpty { "772437314" }.toEnglishDigits()}"
         smallBoldPaint.textAlign = Paint.Align.RIGHT
         canvas.drawText(phoneText, widthPx - padding, currentY + (38f * scale), smallBoldPaint)
 
@@ -131,12 +135,12 @@ object ReceiptBitmapHelper {
         val payText = if (paymentType == "نقداً") "[✓] نقداً   [ ] أجل" else "[ ] نقداً   [✓] أجل"
         canvas.drawText(payText, widthPx / 2f, currentY + (20f * scale), boldPaint)
 
-        // Invoice Number & Date (Left)
+        // Invoice Number & Date (Left, English digits)
         heavyBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("الرقم: #$invoiceNumber", padding, currentY + (20f * scale), heavyBoldPaint)
+        canvas.drawText("الرقم: #${invoiceNumber.toString().toEnglishDigits()}", padding, currentY + (20f * scale), heavyBoldPaint)
 
         smallBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("التاريخ: $dateString", padding, currentY + (38f * scale), smallBoldPaint)
+        canvas.drawText("التاريخ: ${dateString.toEnglishDigits()}", padding, currentY + (38f * scale), smallBoldPaint)
 
         currentY += 46f * scale
 
@@ -151,16 +155,16 @@ object ReceiptBitmapHelper {
 
         currentY += 22f * scale
 
-        // 3. TWO-COLUMN TABLE LAYOUT (WITHOUT CELL BOXES OR SQUARES)
+        // 3. TWO-COLUMN TABLE LAYOUT: EXACT ORDER (1. Total -> 2. Qty -> 3. Details -> 4. Unit Price)
         val halfWidth = contentWidth / 2f
         val rightStartX = padding + halfWidth
         val leftStartX = padding
 
-        // Sub-column Widths (RTL: Total Amount 30%, Qty 18%, Description 52%)
-        val colTotalW = halfWidth * 0.22f
-        val colUnitW = halfWidth * 0.20f
-        val colQtyW = halfWidth * 0.14f
-        val colDescW = halfWidth * 0.44f
+        // Sub-column Widths (Proportional: Total 23.5%, Qty 13.5%, Description 42.5%, Unit Price 20.5%)
+        val colTotalW = halfWidth * 0.235f
+        val colQtyW = halfWidth * 0.135f
+        val colDescW = halfWidth * 0.425f
+        val colUnitW = halfWidth * 0.205f
 
         // Top line for column headers
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
@@ -168,20 +172,21 @@ object ReceiptBitmapHelper {
         // Draw Column Headers in Bold Black
         smallBoldPaint.textAlign = Paint.Align.CENTER
 
-        // Right Half Headers (RTL)
-        canvas.drawText("القيمة", rightStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
-        canvas.drawText("الوحدة", rightStartX + colDescW + colQtyW + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
-        canvas.drawText("العدد", rightStartX + colDescW + (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
+        // Right Half Headers (RTL: 1. Total -> 2. Qty -> 3. Details -> 4. Unit Price)
+        canvas.drawText("الإجمالي", rightStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("العدد", rightStartX + halfWidth - colTotalW - (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("البيان", rightStartX + colDescW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
-
-        // Left Half Headers (RTL)
+        canvas.drawText("التفاصيل", rightStartX + halfWidth - colTotalW - colQtyW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("القيمة", leftStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
-        canvas.drawText("الوحدة", leftStartX + colDescW + colQtyW + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
-        canvas.drawText("العدد", leftStartX + colDescW + (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("سعر الواحدة", rightStartX + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
+
+        // Left Half Headers (RTL: 1. Total -> 2. Qty -> 3. Details -> 4. Unit Price)
+        canvas.drawText("الإجمالي", leftStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("العدد", leftStartX + halfWidth - colTotalW - (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("البيان", leftStartX + colDescW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("التفاصيل", leftStartX + halfWidth - colTotalW - colQtyW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
+        smallBoldPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText("سعر الواحدة", leftStartX + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
 
         // Vertical divider between right and left columns in the header
         canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + tableHeaderHeight, thinLinePaint)
@@ -191,7 +196,7 @@ object ReceiptBitmapHelper {
         // Bottom line under headers
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
 
-        // 4. DATA ROWS (Clean text alignment without any boxes or rectangles)
+        // 4. DATA ROWS
         val rowDescPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             textSize = 12.5f * scale
@@ -209,56 +214,60 @@ object ReceiptBitmapHelper {
         for (row in activeRows) {
             val rowY = currentY
 
-            // Right Section Cells (Total -> Qty -> Desc)
+            // --- Right Section Cells (1. Total -> 2. Qty -> 3. Details -> 4. Unit Price) ---
             rowTotalPaint.textAlign = Paint.Align.CENTER
             if (row.rightTotalAmountStr.isNotBlank()) {
-                canvas.drawText(row.rightTotalAmountStr, rightStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
+                canvas.drawText(row.rightTotalAmountStr.toEnglishDigits(), rightStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
-            val rightQtyValue = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
-            val rightUnitValue = if (rightQtyValue > 0.0) row.rightTotal / rightQtyValue else 0.0
-            if (rightUnitValue > 0.0) {
-                canvas.drawText(formatter.format(rightUnitValue), rightStartX + colDescW + colQtyW + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
-            }
             if (row.rightQuantityStr.isNotBlank()) {
-                canvas.drawText(row.rightQuantityStr, rightStartX + colDescW + (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(row.rightQuantityStr.toEnglishDigits(), rightStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT
             if (row.rightDescription.isNotBlank()) {
                 val maxChars = (18 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
                 val desc = if (row.rightDescription.length > maxChars) row.rightDescription.take(maxChars - 1) + ".." else row.rightDescription
-                canvas.drawText(desc, rightStartX + colDescW - (2f * scale), rowY + (17f * scale), rowDescPaint)
-            }
-
-            // Left Section Cells (Total -> Qty -> Desc)
-            rowTotalPaint.textAlign = Paint.Align.CENTER
-            if (row.leftTotalAmountStr.isNotBlank()) {
-                canvas.drawText(row.leftTotalAmountStr, leftStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
+                canvas.drawText(desc, rightStartX + halfWidth - colTotalW - colQtyW - (2f * scale), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
-            val leftQtyValue = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
-            val leftUnitValue = if (leftQtyValue > 0.0) row.leftTotal / leftQtyValue else 0.0
-            if (leftUnitValue > 0.0) {
-                canvas.drawText(formatter.format(leftUnitValue), leftStartX + colDescW + colQtyW + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
+            val rightQtyValue = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+            val rightUnitValue = if (rightQtyValue > 0.0 && row.rightTotal > 0.0) row.rightTotal / rightQtyValue else 0.0
+            if (rightUnitValue > 0.0) {
+                canvas.drawText(formatter.format(rightUnitValue).toEnglishDigits(), rightStartX + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
             }
+
+            // --- Left Section Cells (1. Total -> 2. Qty -> 3. Details -> 4. Unit Price) ---
+            rowTotalPaint.textAlign = Paint.Align.CENTER
+            if (row.leftTotalAmountStr.isNotBlank()) {
+                canvas.drawText(row.leftTotalAmountStr.toEnglishDigits(), leftStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
+            }
+
+            rowDescPaint.textAlign = Paint.Align.CENTER
             if (row.leftQuantityStr.isNotBlank()) {
-                canvas.drawText(row.leftQuantityStr, leftStartX + colDescW + (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(row.leftQuantityStr.toEnglishDigits(), leftStartX + halfWidth - colTotalW - (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT
             if (row.leftDescription.isNotBlank()) {
                 val maxChars = (18 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
                 val desc = if (row.leftDescription.length > maxChars) row.leftDescription.take(maxChars - 1) + ".." else row.leftDescription
-                canvas.drawText(desc, leftStartX + colDescW - (2f * scale), rowY + (17f * scale), rowDescPaint)
+                canvas.drawText(desc, leftStartX + halfWidth - colTotalW - colQtyW - (2f * scale), rowY + (17f * scale), rowDescPaint)
+            }
+
+            rowDescPaint.textAlign = Paint.Align.CENTER
+            val leftQtyValue = (row.leftQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+            val leftUnitValue = if (leftQtyValue > 0.0 && row.leftTotal > 0.0) row.leftTotal / leftQtyValue else 0.0
+            if (leftUnitValue > 0.0) {
+                canvas.drawText(formatter.format(leftUnitValue).toEnglishDigits(), leftStartX + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             // Central vertical divider between columns
             canvas.drawLine(padding + halfWidth, rowY, padding + halfWidth, rowY + rowHeight, thinLinePaint)
 
-            // Dotted/light horizontal row separator
+            // Horizontal row separator
             canvas.drawLine(padding, rowY + rowHeight, widthPx - padding, rowY + rowHeight, thinLinePaint)
 
             currentY += rowHeight
@@ -269,8 +278,8 @@ object ReceiptBitmapHelper {
         // 5. SUBTOTALS (كل شيء إجمالي لحاله)
         boldPaint.textSize = 12.5f * scale
         boldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("إجمالي اليمين: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}", rightStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
-        canvas.drawText("إجمالي اليسار: ${formatter.format(leftSubtotal)} ${storeConfig.currencySymbol}", leftStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
+        canvas.drawText("إجمالي اليمين: ${formatter.format(rightSubtotal).toEnglishDigits()} ${storeConfig.currencySymbol}", rightStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
+        canvas.drawText("إجمالي اليسار: ${formatter.format(leftSubtotal).toEnglishDigits()} ${storeConfig.currencySymbol}", leftStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
 
         // Central divider in subtotals
         canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + subtotalsHeight, thinLinePaint)
@@ -287,7 +296,7 @@ object ReceiptBitmapHelper {
         canvas.drawText("المبلغ الإجمالي العام:", widthPx - padding - (6f * scale), currentY + (21f * scale), whiteTextPaint)
 
         grandTotalNumberPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("${formatter.format(grandTotal)} ${storeConfig.currencySymbol}", padding + (6f * scale), currentY + (21f * scale), grandTotalNumberPaint)
+        canvas.drawText("${formatter.format(grandTotal).toEnglishDigits()} ${storeConfig.currencySymbol}", padding + (6f * scale), currentY + (21f * scale), grandTotalNumberPaint)
 
         currentY += grandTotalHeight + (4f * scale)
 

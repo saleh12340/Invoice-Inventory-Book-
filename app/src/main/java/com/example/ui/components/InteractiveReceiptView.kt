@@ -39,6 +39,10 @@ import com.example.ui.viewmodels.DualReceiptRow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import com.example.ui.util.NumberUtils
+import com.example.ui.util.toEnglishDigits
 
 val ReceiptInkNavy = Color(0xFF1E3A8A)
 val ReceiptInkBlueAccent = Color(0xFF1D4ED8)
@@ -130,8 +134,14 @@ fun AutoSelectBasicTextField(
     BasicTextField(
         value = textFieldValue,
         onValueChange = { newVal ->
-            textFieldValue = newVal
-            onValueChange(newVal.text)
+            val converted = newVal.text.toEnglishDigits()
+            val cleanVal = if (converted != newVal.text) {
+                newVal.copy(text = converted)
+            } else {
+                newVal
+            }
+            textFieldValue = cleanVal
+            onValueChange(converted)
         },
         modifier = baseModifier,
         textStyle = textStyle,
@@ -178,7 +188,7 @@ fun InteractiveReceiptView(
     isEditable: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    val formatter = DecimalFormat("#,##0.##")
+    val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
     val rightSubtotal = dualRows.sumOf { it.rightTotal }
     val leftSubtotal = dualRows.sumOf { it.leftTotal }
@@ -380,28 +390,28 @@ fun InteractiveReceiptView(
                     .padding(vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Right Half Headers (الشق الأيمن)
-                HeaderCell("البيان", 1.15f)
+                // Right Half Headers (الشق الأيمن: القيمة الإجمالية -> العدد -> التفاصيل -> سعر الواحدة)
+                HeaderCell("الإجمالي", 0.80f)
                 HeaderCell("العدد", 0.45f)
-                HeaderCell("السعر", 0.65f)
-                HeaderCell("المبلغ", 0.75f)
+                HeaderCell("التفاصيل", 1.45f)
+                HeaderCell("سعر الواحدة", 0.70f)
 
                 // Central Vertical Divider Line
                 Box(Modifier.width(1.5.dp).height(20.dp).background(Color.White))
 
-                // Left Half Headers (الشق الأيسر)
-                HeaderCell("البيان", 1.15f)
+                // Left Half Headers (الشق الأيسر: القيمة الإجمالية -> العدد -> التفاصيل -> سعر الواحدة)
+                HeaderCell("الإجمالي", 0.80f)
                 HeaderCell("العدد", 0.45f)
-                HeaderCell("السعر", 0.65f)
-                HeaderCell("المبلغ", 0.75f)
+                HeaderCell("التفاصيل", 1.45f)
+                HeaderCell("سعر الواحدة", 0.70f)
             }
 
             dualRows.forEachIndexed { index, row ->
-                val rightQty = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
-                val rightTot = row.rightTotalAmountStr.toDoubleOrNull() ?: 0.0
+                val rightQty = (row.rightQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                val rightTot = row.rightTotal
                 val rightUnitPrice = if (rightQty > 0.0 && rightTot > 0.0) rightTot / rightQty else 0.0
-                val leftQty = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
-                val leftTot = row.leftTotalAmountStr.toDoubleOrNull() ?: 0.0
+                val leftQty = (row.leftQuantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                val leftTot = row.leftTotal
                 val leftUnitPrice = if (leftQty > 0.0 && leftTot > 0.0) leftTot / leftQty else 0.0
 
                 Row(
@@ -419,39 +429,43 @@ fun InteractiveReceiptView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // --- RIGHT HALF (الشق الأيمن) ---
+                    // 1. القيمة الإجمالية
                     DataCell(
-                        value = row.rightDescription,
-                        onValueChange = { onUpdateRightDescription(index, it) },
+                        value = row.rightTotalAmountStr.toEnglishDigits(),
+                        onValueChange = { onUpdateRightTotalAmount(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
-                        weight = 1.15f,
-                        align = TextAlign.Start,
-                        placeholder = if (isEditable && row.isCompletelyEmpty) "صنف" else ""
-                    )
-                    DataCell(
-                        value = row.rightQuantityStr,
-                        onValueChange = { onUpdateRightQuantity(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.45f,
-                        isNumeric = true
-                    )
-                    DataCell(
-                        value = if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "",
-                        onValueChange = {},
-                        isEditable = false,
-                        weight = 0.65f,
-                        isNumeric = true,
-                        textColor = ReceiptInkBlueAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DataCell(
-                        value = row.rightTotalAmountStr,
-                        onValueChange = { onUpdateRightTotalAmount(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.75f,
+                        weight = 0.80f,
                         isNumeric = true,
                         textColor = ReceiptInkNavy,
                         fontWeight = FontWeight.Bold,
                         placeholder = if (isEditable && row.isCompletelyEmpty) "0" else ""
+                    )
+                    // 2. العدد
+                    DataCell(
+                        value = row.rightQuantityStr.toEnglishDigits(),
+                        onValueChange = { onUpdateRightQuantity(index, it.toEnglishDigits()) },
+                        isEditable = isEditable,
+                        weight = 0.45f,
+                        isNumeric = true
+                    )
+                    // 3. التفاصيل
+                    DataCell(
+                        value = row.rightDescription,
+                        onValueChange = { onUpdateRightDescription(index, it) },
+                        isEditable = isEditable,
+                        weight = 1.45f,
+                        align = TextAlign.Start,
+                        placeholder = if (isEditable && row.isCompletelyEmpty) "صنف" else ""
+                    )
+                    // 4. سعر الواحدة (يستنتج ويعرض)
+                    DataCell(
+                        value = if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "",
+                        onValueChange = {},
+                        isEditable = false,
+                        weight = 0.70f,
+                        isNumeric = true,
+                        textColor = ReceiptInkBlueAccent,
+                        fontWeight = FontWeight.Bold
                     )
 
                     // --- CENTRAL VERTICAL DIVIDER ---
@@ -463,39 +477,43 @@ fun InteractiveReceiptView(
                     )
 
                     // --- LEFT HALF (الشق الأيسر) ---
+                    // 1. القيمة الإجمالية
                     DataCell(
-                        value = row.leftDescription,
-                        onValueChange = { onUpdateLeftDescription(index, it) },
+                        value = row.leftTotalAmountStr.toEnglishDigits(),
+                        onValueChange = { onUpdateLeftTotalAmount(index, it.toEnglishDigits()) },
                         isEditable = isEditable,
-                        weight = 1.15f,
-                        align = TextAlign.Start,
-                        placeholder = ""
-                    )
-                    DataCell(
-                        value = row.leftQuantityStr,
-                        onValueChange = { onUpdateLeftQuantity(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.45f,
-                        isNumeric = true
-                    )
-                    DataCell(
-                        value = if (leftUnitPrice > 0.0) formatter.format(leftUnitPrice) else "",
-                        onValueChange = {},
-                        isEditable = false,
-                        weight = 0.65f,
-                        isNumeric = true,
-                        textColor = ReceiptInkBlueAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DataCell(
-                        value = row.leftTotalAmountStr,
-                        onValueChange = { onUpdateLeftTotalAmount(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.75f,
+                        weight = 0.80f,
                         isNumeric = true,
                         textColor = ReceiptInkNavy,
                         fontWeight = FontWeight.Bold,
                         placeholder = ""
+                    )
+                    // 2. العدد
+                    DataCell(
+                        value = row.leftQuantityStr.toEnglishDigits(),
+                        onValueChange = { onUpdateLeftQuantity(index, it.toEnglishDigits()) },
+                        isEditable = isEditable,
+                        weight = 0.45f,
+                        isNumeric = true
+                    )
+                    // 3. التفاصيل
+                    DataCell(
+                        value = row.leftDescription,
+                        onValueChange = { onUpdateLeftDescription(index, it) },
+                        isEditable = isEditable,
+                        weight = 1.45f,
+                        align = TextAlign.Start,
+                        placeholder = ""
+                    )
+                    // 4. سعر الواحدة (يستنتج ويعرض)
+                    DataCell(
+                        value = if (leftUnitPrice > 0.0) formatter.format(leftUnitPrice) else "",
+                        onValueChange = {},
+                        isEditable = false,
+                        weight = 0.70f,
+                        isNumeric = true,
+                        textColor = ReceiptInkBlueAccent,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

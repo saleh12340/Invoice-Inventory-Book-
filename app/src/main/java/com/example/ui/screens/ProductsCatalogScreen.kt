@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import com.example.ui.util.toEnglishDigits
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +41,7 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
     var productPriceInput by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
 
-    val formatter = DecimalFormat("#,##0.##")
+    val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
     val filteredList = remember(allProducts, searchQuery) {
         if (searchQuery.isBlank()) allProducts
@@ -271,7 +274,7 @@ fun ProductsCatalogScreen(viewModel: InvoiceViewModel) {
                     NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
                         BasicTextField(
                             value = productPriceInput,
-                            onValueChange = { productPriceInput = it },
+                            onValueChange = { productPriceInput = it.toEnglishDigits() },
                             singleLine = true,
                             textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
                             cursorBrush = SolidColor(NeuAccentBlue),

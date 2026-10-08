@@ -38,6 +38,10 @@ import com.example.ui.components.ReceiptBitmapHelper
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import com.example.ui.util.NumberUtils
+import com.example.ui.util.toEnglishDigits
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -580,7 +584,7 @@ fun QuickItemRulerBar(
     onAddItem: (name: String, quantity: String, total: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val formatter = remember { DecimalFormat("#,##0.##") }
+    val formatter = remember { DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US)) }
 
     var itemName by remember { mutableStateOf("") }
     var quantityStr by remember { mutableStateOf("1") }
@@ -588,24 +592,24 @@ fun QuickItemRulerBar(
     var totalAmountStr by remember { mutableStateOf("") }
     var lastEditedField by remember { mutableStateOf("TOTAL") } // "TOTAL" or "UNIT"
 
-    val currentQty = quantityStr.toDoubleOrNull() ?: 1.0
+    val currentQty = (quantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
 
     // Deduce unit price or total based on user inputs
     val calculatedUnitPrice = remember(quantityStr, totalAmountStr, unitPriceStr, lastEditedField) {
         if (lastEditedField == "UNIT") {
-            unitPriceStr.toDoubleOrNull() ?: 0.0
+            unitPriceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
         } else {
-            val tot = totalAmountStr.toDoubleOrNull() ?: 0.0
+            val tot = totalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
             if (currentQty > 0.0) tot / currentQty else 0.0
         }
     }
 
     val calculatedTotal = remember(quantityStr, totalAmountStr, unitPriceStr, lastEditedField) {
         if (lastEditedField == "UNIT") {
-            val up = unitPriceStr.toDoubleOrNull() ?: 0.0
+            val up = unitPriceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
             up * currentQty
         } else {
-            totalAmountStr.toDoubleOrNull() ?: 0.0
+            totalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
         }
     }
 
@@ -613,10 +617,12 @@ fun QuickItemRulerBar(
         val finalTot = if (lastEditedField == "UNIT" && calculatedTotal > 0.0) {
             formatter.format(calculatedTotal)
         } else {
-            totalAmountStr
+            totalAmountStr.toEnglishDigits()
         }
-        if (itemName.isNotBlank() || finalTot.isNotBlank()) {
-            onAddItem(itemName, quantityStr, finalTot)
+        val cleanName = itemName.trim()
+        val cleanQty = quantityStr.toEnglishDigits().ifBlank { "1" }
+        if (cleanName.isNotBlank() || finalTot.isNotBlank()) {
+            onAddItem(cleanName, cleanQty, finalTot)
             itemName = ""
             quantityStr = "1"
             unitPriceStr = ""
@@ -625,7 +631,7 @@ fun QuickItemRulerBar(
         }
     }
 
-    // 1. Single Horizontal Ruler Row - No labels above, only smart disappearing placeholders
+    // 1. Single Horizontal Ruler Row - True invoice-order: Total -> Qty -> Details -> Unit Price -> Add Button
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -640,64 +646,7 @@ fun QuickItemRulerBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. مربع البيان (اسم الصنف)
-            SmartRulerInputBox(
-                value = itemName,
-                onValueChange = { itemName = it },
-                placeholder = "البيان",
-                modifier = Modifier.weight(1.35f),
-                isNumeric = false,
-                align = TextAlign.Start,
-                imeAction = ImeAction.Next
-            )
-
-            // 2. مربع العدد (الكمية)
-            SmartRulerInputBox(
-                value = quantityStr,
-                onValueChange = {
-                    quantityStr = it
-                    val q = it.toDoubleOrNull() ?: 1.0
-                    if (lastEditedField == "UNIT" && unitPriceStr.isNotBlank()) {
-                        val up = unitPriceStr.toDoubleOrNull() ?: 0.0
-                        totalAmountStr = if (up * q > 0) formatter.format(up * q) else ""
-                    } else if (totalAmountStr.isNotBlank()) {
-                        val tot = totalAmountStr.toDoubleOrNull() ?: 0.0
-                        unitPriceStr = if (q > 0) formatter.format(tot / q) else ""
-                    }
-                },
-                placeholder = "العدد",
-                modifier = Modifier.weight(0.60f),
-                isNumeric = true,
-                align = TextAlign.Center,
-                imeAction = ImeAction.Next
-            )
-
-            // 3. مربع سعر الواحدة (يستنتج تلقائياً أو يدخل مباشرة)
-            val displayUnitPrice = if (lastEditedField == "TOTAL" && calculatedUnitPrice > 0.0) {
-                formatter.format(calculatedUnitPrice)
-            } else {
-                unitPriceStr
-            }
-            SmartRulerInputBox(
-                value = displayUnitPrice,
-                onValueChange = {
-                    unitPriceStr = it
-                    lastEditedField = "UNIT"
-                    val up = it.toDoubleOrNull()
-                    val q = quantityStr.toDoubleOrNull() ?: 1.0
-                    if (up != null && q > 0) {
-                        totalAmountStr = formatter.format(up * q)
-                    }
-                },
-                placeholder = "السعر",
-                modifier = Modifier.weight(0.80f),
-                isNumeric = true,
-                align = TextAlign.Center,
-                imeAction = ImeAction.Next,
-                textColor = NeuAccentBlue
-            )
-
-            // 4. مربع المبلغ (الإجمالي)
+            // 1. المربع الأول: القيمة الإجمالية
             val displayTotal = if (lastEditedField == "UNIT" && calculatedTotal > 0.0) {
                 formatter.format(calculatedTotal)
             } else {
@@ -705,30 +654,94 @@ fun QuickItemRulerBar(
             }
             SmartRulerInputBox(
                 value = displayTotal,
-                onValueChange = {
-                    totalAmountStr = it
+                onValueChange = { input ->
+                    val clean = input.toEnglishDigits()
+                    totalAmountStr = clean
                     lastEditedField = "TOTAL"
-                    val tot = it.toDoubleOrNull()
-                    val q = quantityStr.toDoubleOrNull() ?: 1.0
-                    if (tot != null && q > 0) {
+                    val tot = clean.toDoubleOrNull()
+                    val q = (quantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                    if (tot != null && tot > 0) {
                         unitPriceStr = formatter.format(tot / q)
+                    } else if (clean.isEmpty()) {
+                        unitPriceStr = ""
                     }
                 },
-                placeholder = "المبلغ",
+                placeholder = "القيمة الإجمالية",
                 modifier = Modifier.weight(0.85f),
+                isNumeric = true,
+                align = TextAlign.Center,
+                imeAction = ImeAction.Next,
+                textColor = NeuAccentBlue
+            )
+
+            // 2. المربع الثاني: العدد (الكمية)
+            SmartRulerInputBox(
+                value = quantityStr,
+                onValueChange = { input ->
+                    val clean = input.toEnglishDigits()
+                    quantityStr = clean
+                    val q = (clean.toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                    if (lastEditedField == "UNIT" && unitPriceStr.isNotBlank()) {
+                        val up = unitPriceStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+                        totalAmountStr = if (up * q > 0) formatter.format(up * q) else ""
+                    } else if (totalAmountStr.isNotBlank()) {
+                        val tot = totalAmountStr.toEnglishDigits().toDoubleOrNull() ?: 0.0
+                        unitPriceStr = if (tot > 0) formatter.format(tot / q) else ""
+                    }
+                },
+                placeholder = "العدد",
+                modifier = Modifier.weight(0.50f),
+                isNumeric = true,
+                align = TextAlign.Center,
+                imeAction = ImeAction.Next
+            )
+
+            // 3. المربع الثالث: التفاصيل (اسم الصنف / البيان)
+            SmartRulerInputBox(
+                value = itemName,
+                onValueChange = { itemName = it },
+                placeholder = "التفاصيل",
+                modifier = Modifier.weight(1.55f),
+                isNumeric = false,
+                align = TextAlign.Start,
+                imeAction = ImeAction.Next
+            )
+
+            // 4. المربع الرابع: سعر الواحدة (يستنتج تلقائياً أو يدخل مباشرة)
+            val displayUnitPrice = if (lastEditedField == "TOTAL" && calculatedUnitPrice > 0.0) {
+                formatter.format(calculatedUnitPrice)
+            } else {
+                unitPriceStr
+            }
+            SmartRulerInputBox(
+                value = displayUnitPrice,
+                onValueChange = { input ->
+                    val clean = input.toEnglishDigits()
+                    unitPriceStr = clean
+                    lastEditedField = "UNIT"
+                    val up = clean.toDoubleOrNull()
+                    val q = (quantityStr.toEnglishDigits().toDoubleOrNull() ?: 1.0).coerceAtLeast(0.0001)
+                    if (up != null && up > 0) {
+                        totalAmountStr = formatter.format(up * q)
+                    } else if (clean.isEmpty()) {
+                        totalAmountStr = ""
+                    }
+                },
+                placeholder = "سعر الواحدة",
+                modifier = Modifier.weight(0.75f),
                 isNumeric = true,
                 align = TextAlign.Center,
                 imeAction = ImeAction.Done,
                 onDone = { submitItem() }
             )
 
-            // 5. زر الإضافة الذكي الدائري / الكبسولة
+            // 5. زر الإضافة الذكي الكبسولي (+)
             Surface(
                 onClick = { submitItem() },
                 shape = RoundedCornerShape(10.dp),
                 color = NeuAccentBlue,
                 shadowElevation = 2.dp,
-                modifier = Modifier.size(width = 42.dp, height = 34.dp)
+                modifier = Modifier.size(width = 38.dp, height = 34.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
