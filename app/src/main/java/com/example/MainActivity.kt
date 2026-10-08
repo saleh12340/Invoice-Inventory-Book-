@@ -34,7 +34,7 @@ enum class NavigationScreen(val label: String, val selectedIcon: ImageVector, va
     NEW_INVOICE("جديدة", AppIcons.Receipt, AppIcons.Receipt),
     HISTORY("السجل", AppIcons.History, AppIcons.History),
     PRODUCTS("الأصناف", AppIcons.Category, AppIcons.Category),
-    CUSTOMERS("العملاء", AppIcons.Person, AppIcons.Person),
+    CUSTOMERS("العملاء", AppIcons.Store, AppIcons.Store),
     PRINTER("الطابعة", AppIcons.Print, AppIcons.Print),
     SETTINGS("المتجر", AppIcons.Store, AppIcons.Store)
 }
