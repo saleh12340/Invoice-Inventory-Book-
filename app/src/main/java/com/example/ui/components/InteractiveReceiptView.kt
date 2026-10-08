@@ -449,8 +449,11 @@ fun InteractiveReceiptView(
                         isEditable = isEditable,
                         weight = 1.18f,
                         align = TextAlign.Start,
-                        placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "اكتب صنف..." else "",
-                        subBadge = null
+                        placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "الصنف" else "",
+                        subBadge = null,
+                        autoFocus = isEditable && index == dualRows.lastIndex && index > 0 &&
+                            dualRows[index - 1].leftDescription.isNotBlank() &&
+                            dualRows[index - 1].leftTotalAmountStr.isNotBlank()
                     )
 
                     // Vertical Divider between dual columns
@@ -488,7 +491,11 @@ fun InteractiveReceiptView(
                         isEditable = isEditable,
                         weight = 1.18f,
                         align = TextAlign.Start,
-                        subBadge = null
+                        subBadge = null,
+                        autoFocus = isEditable &&
+                            row.rightDescription.isNotBlank() &&
+                            row.rightTotalAmountStr.isNotBlank() &&
+                            row.leftDescription.isBlank()
                     )
                 }
             }
@@ -640,10 +647,18 @@ private fun RowScope.DataCell(
     textColor: Color = Color.Black,
     fontWeight: FontWeight = FontWeight.Normal,
     placeholder: String = "",
-    subBadge: String? = null
+    subBadge: String? = null,
+    autoFocus: Boolean = false
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(autoFocus) {
+        if (autoFocus && isEditable) {
+            delay(80)
+            focusRequester.requestFocus()
+        }
+    }
 
     Box(
         modifier = Modifier
