@@ -314,13 +314,13 @@ fun InteractiveReceiptView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFF8FAFC))
-                    .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.5f), RoundedCornerShape(3.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                     .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 6.dp, vertical = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "المطلوب من الأخ: ",
-                    fontSize = 9.5.sp,
+                    text = "العميل:",
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = ReceiptInkNavy
                 )
@@ -330,7 +330,7 @@ fun InteractiveReceiptView(
                         onValueChange = onCustomerNameChange,
                         textStyle = TextStyle(fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color.Black),
                         singleLine = true,
-                        placeholder = "اكتب اسم العميل (أو عميل نقدي)...",
+                        placeholder = "اسم العميل...",
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         cursorBrush = SolidColor(ReceiptInkNavy),
                         modifier = Modifier.weight(1f)
@@ -648,7 +648,7 @@ private fun RowScope.DataCell(
     Box(
         modifier = Modifier
             .weight(weight)
-            .height(if (subBadge != null) 40.dp else 36.dp)
+            .height(if (subBadge != null) 38.dp else 34.dp)
             .padding(horizontal = 0.8.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(
