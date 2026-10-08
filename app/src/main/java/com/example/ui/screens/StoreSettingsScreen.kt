@@ -1,13 +1,15 @@
 package com.example.ui.screens
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Phone
@@ -16,14 +18,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.backup.BackupRestoreResult
 import com.example.data.local.StoreConfigEntity
-import com.example.ui.theme.AppIcons
+import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -93,16 +98,33 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
     }
 
     Scaffold(
+        containerColor = NeuBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("إعدادات المتجر والبيانات", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                )
-            )
+            Surface(
+                color = NeuSurfaceRaised,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(20.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "إعدادات المتجر وترويسة الفاتورة",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = NeuTextPrimary
+                    )
+                }
+            }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            NeuButton(
                 onClick = {
                     val updated = StoreConfigEntity(
                         id = 1,
@@ -119,252 +141,342 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                     )
                     viewModel.updateStoreConfig(updated)
                 },
-                icon = { Icon(AppIcons.Save, contentDescription = null) },
-                text = { Text("حفظ الإعدادات", fontWeight = FontWeight.Bold) }
-            )
+                shape = RoundedCornerShape(20.dp),
+                isPrimary = true
+            ) {
+                Icon(AppIcons.Save, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("حفظ الإعدادات", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp)
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(14.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // 1. BACKUP & RESTORE CARD (النسخ الاحتياطي والاستعادة)
-            Card(
+            NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                shape = RoundedCornerShape(22.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(AppIcons.Backup, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeuBadge(size = 44.dp) {
+                        Icon(AppIcons.Backup, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
                         Text(
                             text = "النسخ الاحتياطي واستعادة البيانات",
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = NeuTextPrimary,
                             fontSize = 15.sp
                         )
+                        Text(
+                            text = "حفظ ومزامنة الفواتير وقائمة الأصناف",
+                            fontSize = 11.5.sp,
+                            color = NeuTextSecondary
+                        )
                     }
+                }
 
-                    Text(
-                        text = "احفظ نسخة من جميع فواتيرك وأصنافك وإعداداتك لتجنب فقدان البيانات أو لنقلها لهاتف آخر بكل سهولة.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Share / Export JSON
-                        Button(
-                            onClick = {
-                                isOperatingBackup = true
-                                viewModel.createBackupJson { json ->
-                                    isOperatingBackup = false
-                                    backupJsonToExport = json
-
-                                    // Open system share sheet
-                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "نسخة احتياطية - بقالة العزي")
-                                        putExtra(Intent.EXTRA_TEXT, json)
-                                    }
-                                    val shareIntent = Intent.createChooser(sendIntent, "مشاركة النسخة الاحتياطية (واتساب / درايف / ملف)")
-                                    context.startActivity(shareIntent)
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isOperatingBackup,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("مشاركة نسخة", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        // Save as file in storage
-                        OutlinedButton(
-                            onClick = {
-                                isOperatingBackup = true
-                                viewModel.createBackupJson { json ->
-                                    isOperatingBackup = false
-                                    backupJsonToExport = json
-                                    val dateStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
-                                    exportFileLauncher.launch("Fatooraty_Backup_$dateStr.json")
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isOperatingBackup
-                        ) {
-                            Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("حفظ كملف", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    // Restore button
-                    OutlinedButton(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Share / Export JSON
+                    NeuButton(
                         onClick = {
-                            importFileLauncher.launch("application/json")
+                            isOperatingBackup = true
+                            viewModel.createBackupJson { json ->
+                                isOperatingBackup = false
+                                backupJsonToExport = json
+
+                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "نسخة احتياطية - بقالة العزي")
+                                    putExtra(Intent.EXTRA_TEXT, json)
+                                }
+                                val shareIntent = Intent.createChooser(sendIntent, "مشاركة النسخة الاحتياطية (واتساب / درايف / ملف)")
+                                context.startActivity(shareIntent)
+                            }
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF1E3A8A))
+                        modifier = Modifier.weight(1f),
+                        enabled = !isOperatingBackup,
+                        isPrimary = true
                     ) {
-                        Icon(AppIcons.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("استعادة نسخة احتياطية من ملف (JSON)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("مشاركة نسخة", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
+
+                    // Save as file in storage
+                    NeuButton(
+                        onClick = {
+                            isOperatingBackup = true
+                            viewModel.createBackupJson { json ->
+                                isOperatingBackup = false
+                                backupJsonToExport = json
+                                val dateStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
+                                exportFileLauncher.launch("Fatooraty_Backup_$dateStr.json")
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isOperatingBackup,
+                        isPrimary = false
+                    ) {
+                        Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuTextPrimary)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("حفظ كملف", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Restore button
+                NeuButton(
+                    onClick = {
+                        importFileLauncher.launch("application/json")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    isPrimary = false
+                ) {
+                    Icon(AppIcons.Restore, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuAccentBlue)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("استعادة نسخة احتياطية من ملف (JSON)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
                 }
             }
 
             // 2. STORE NAME & LOGO
-            Card(
+            NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                shape = RoundedCornerShape(22.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "اسم المحل والتاجر",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp
-                    )
+                Text(
+                    text = "اسم المحل والتاجر",
+                    fontWeight = FontWeight.Bold,
+                    color = NeuAccentBlue,
+                    fontSize = 14.5.sp
+                )
 
-                    OutlinedTextField(
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("اسم المحل / التاجر بالعربي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = storeNameArabic,
                         onValueChange = { storeNameArabic = it },
-                        label = { Text("اسم المحل / التاجر بالعربي") },
-                        placeholder = { Text("مثال: بقالة العزي") },
-                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        leadingIcon = { Icon(AppIcons.Store, contentDescription = null) }
+                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                        cursorBrush = SolidColor(NeuAccentBlue),
+                        modifier = Modifier.fillMaxWidth(),
+                        decorationBox = { inner ->
+                            if (storeNameArabic.isEmpty()) {
+                                Text("مثال: بقالة العزي", color = NeuTextMuted, fontSize = 14.sp)
+                            }
+                            inner()
+                        }
                     )
+                }
 
-                    OutlinedTextField(
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("اسم المحل بالإنجليزي (اختياري):", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = storeNameEnglish,
                         onValueChange = { storeNameEnglish = it },
-                        label = { Text("اسم المحل بالإنجليزي (اختياري)") },
-                        placeholder = { Text("مثال: Al-Ezzi Grocery") },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        decorationBox = { inner ->
+                            if (storeNameEnglish.isEmpty()) {
+                                Text("مثال: Al-Ezzi Grocery", color = NeuTextMuted, fontSize = 14.sp)
+                            }
+                            inner()
+                        }
                     )
+                }
 
-                    OutlinedTextField(
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("النشاط / الوصف الإضافي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = storeSubtitle,
                         onValueChange = { storeSubtitle = it },
-                        label = { Text("النشاط / الوصف الإضافي") },
-                        placeholder = { Text("مثال: مواد غذائية واستهلاكية") },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        decorationBox = { inner ->
+                            if (storeSubtitle.isEmpty()) {
+                                Text("مثال: مواد غذائية واستهلاكية", color = NeuTextMuted, fontSize = 14.sp)
+                            }
+                            inner()
+                        }
                     )
                 }
             }
 
             // 3. CONTACT & ADDRESS
-            Card(
+            NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                shape = RoundedCornerShape(22.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "بيانات الاتصال والعنوان",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp
-                    )
+                Text(
+                    text = "بيانات الاتصال والعنوان",
+                    fontWeight = FontWeight.Bold,
+                    color = NeuAccentBlue,
+                    fontSize = 14.5.sp
+                )
 
-                    OutlinedTextField(
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("رقم الهاتف / الجوال الأساسي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = phone1,
                         onValueChange = { phone1 = it },
-                        label = { Text("رقم الهاتف / الجوال الأساسي") },
-                        placeholder = { Text("مثال: 772437314") },
-                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) }
+                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                        cursorBrush = SolidColor(NeuAccentBlue),
+                        modifier = Modifier.fillMaxWidth(),
+                        decorationBox = { inner ->
+                            if (phone1.isEmpty()) {
+                                Text("مثال: 772437314", color = NeuTextMuted, fontSize = 14.sp)
+                            }
+                            inner()
+                        }
                     )
+                }
 
-                    OutlinedTextField(
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("رقم هاتف إضافي (اختياري):", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = phone2,
                         onValueChange = { phone2 = it },
-                        label = { Text("رقم هاتف إضافي (اختياري)") },
-                        placeholder = { Text("مثال: 770000000") },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        decorationBox = { inner ->
+                            if (phone2.isEmpty()) {
+                                Text("مثال: 770000000", color = NeuTextMuted, fontSize = 14.sp)
+                            }
+                            inner()
+                        }
                     )
+                }
 
-                    OutlinedTextField(
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("عنوان المحل:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = address,
                         onValueChange = { address = it },
-                        label = { Text("عنوان المحل") },
-                        placeholder = { Text("صنعاء - شارع ...") },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary),
+                        cursorBrush = SolidColor(NeuAccentBlue),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        decorationBox = { inner ->
+                            if (address.isEmpty()) {
+                                Text("صنعاء - شارع ...", color = NeuTextMuted, fontSize = 14.sp)
+                            }
+                            inner()
+                        }
                     )
                 }
             }
 
             // 4. INVOICE OPTIONS & CURRENCY
-            Card(
+            NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                shape = RoundedCornerShape(22.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                Text(
+                    text = "خيارات الفاتورة والعملة",
+                    fontWeight = FontWeight.Bold,
+                    color = NeuAccentBlue,
+                    fontSize = 14.5.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(
-                        text = "خيارات الفاتورة والعملة",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = currencySymbol,
-                            onValueChange = { currencySymbol = it },
-                            label = { Text("رمز العملة") },
-                            placeholder = { Text("ر.ي / ر.س / $") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-
-                        OutlinedTextField(
-                            value = nextInvoiceNumberStr,
-                            onValueChange = { nextInvoiceNumberStr = it },
-                            label = { Text("رقم التسلسل التالي") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("رمز العملة:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                        NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                            BasicTextField(
+                                value = currencySymbol,
+                                onValueChange = { currencySymbol = it },
+                                singleLine = true,
+                                textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                                cursorBrush = SolidColor(NeuAccentBlue),
+                                modifier = Modifier.fillMaxWidth(),
+                                decorationBox = { inner ->
+                                    if (currencySymbol.isEmpty()) {
+                                        Text("ر.ي", color = NeuTextMuted, fontSize = 14.sp)
+                                    }
+                                    inner()
+                                }
+                            )
+                        }
                     }
 
-                    OutlinedTextField(
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("رقم التسلسل التالي:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                        NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                            BasicTextField(
+                                value = nextInvoiceNumberStr,
+                                onValueChange = { nextInvoiceNumberStr = it },
+                                singleLine = true,
+                                textStyle = TextStyle(fontSize = 14.sp, color = NeuTextPrimary, fontWeight = FontWeight.Bold),
+                                cursorBrush = SolidColor(NeuAccentBlue),
+                                modifier = Modifier.fillMaxWidth(),
+                                decorationBox = { inner ->
+                                    if (nextInvoiceNumberStr.isEmpty()) {
+                                        Text("1001", color = NeuTextMuted, fontSize = 14.sp)
+                                    }
+                                    inner()
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("ملاحظة وتعهد أسفل الفاتورة:", fontSize = 12.sp, color = NeuTextSecondary, fontWeight = FontWeight.Bold)
+                NeuInsetBox(modifier = Modifier.fillMaxWidth()) {
+                    BasicTextField(
                         value = defaultDisclaimerNote,
                         onValueChange = { defaultDisclaimerNote = it },
-                        label = { Text("ملاحظة وتعهد أسفل الفاتورة") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2
+                        textStyle = TextStyle(fontSize = 13.5.sp, color = NeuTextPrimary),
+                        cursorBrush = SolidColor(NeuAccentBlue),
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(70.dp))
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 
@@ -375,12 +487,16 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                 showRestoreConfirmDialog = false
                 restoreJsonData = null
             },
-            title = { Text("تأكيد استعادة النسخة الاحتياطية", fontWeight = FontWeight.Bold) },
+            containerColor = NeuSurface,
+            title = { Text("تأكيد استعادة النسخة الاحتياطية", fontWeight = FontWeight.Bold, color = NeuTextPrimary) },
             text = {
-                Text("تنبيه: سيتم استعادة الفواتير وقائمة الأصناف وإعدادات المحل من النسخة المحددة ودمجها في قاعدة البيانات.\n\nهل تريد المتابعة وتأكيد الاستعادة؟")
+                Text(
+                    "تنبيه: سيتم استعادة الفواتير وقائمة الأصناف وإعدادات المحل من النسخة المحددة ودمجها في قاعدة البيانات.\n\nهل تريد المتابعة وتأكيد الاستعادة؟",
+                    color = NeuTextSecondary
+                )
             },
             confirmButton = {
-                Button(
+                NeuButton(
                     onClick = {
                         val json = restoreJsonData!!
                         showRestoreConfirmDialog = false
@@ -395,19 +511,21 @@ fun StoreSettingsScreen(viewModel: InvoiceViewModel) {
                                 }
                             }
                         }
-                    }
+                    },
+                    isPrimary = true
                 ) {
-                    Text("نعم، استعادة الآن", fontWeight = FontWeight.Bold)
+                    Text("نعم، استعادة الآن", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             },
             dismissButton = {
-                OutlinedButton(
+                NeuButton(
                     onClick = {
                         showRestoreConfirmDialog = false
                         restoreJsonData = null
-                    }
+                    },
+                    isPrimary = false
                 ) {
-                    Text("إلغاء")
+                    Text("إلغاء", color = NeuTextPrimary, fontWeight = FontWeight.Bold)
                 }
             }
         )

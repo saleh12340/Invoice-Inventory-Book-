@@ -2,18 +2,24 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,8 +27,7 @@ import com.example.data.local.InvoiceWithItems
 import com.example.printer.PrinterConnectionState
 import com.example.ui.components.InteractiveReceiptView
 import com.example.ui.components.ReceiptBitmapHelper
-import com.example.ui.theme.AppIcons
-import com.example.ui.viewmodels.DualReceiptRow
+import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
 
@@ -44,7 +49,6 @@ fun InvoiceHistoryScreen(
 
     val formatter = DecimalFormat("#,##0.##")
 
-    // Invoices are already sorted newest first by database query (invoiceId DESC)
     val filteredList = remember(invoicesWithItems, searchQuery) {
         if (searchQuery.isBlank()) invoicesWithItems
         else invoicesWithItems.filter {
@@ -59,13 +63,29 @@ fun InvoiceHistoryScreen(
     }
 
     Scaffold(
+        containerColor = NeuBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("سجل الفواتير (مرتب حسب الأحدث)", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
-                )
-            )
+            Surface(
+                color = NeuSurfaceRaised,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(20.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "سجل الفواتير (الأحدث أولاً)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = NeuTextPrimary
+                    )
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -73,59 +93,77 @@ fun InvoiceHistoryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("بحث باسم العميل أو رقم الفاتورة...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "مسح")
-                        }
-                    }
-                },
+            // Sunken Neumorphic Search Bar
+            NeuInsetBox(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 13.5.sp, color = NeuTextPrimary),
+                        cursorBrush = SolidColor(NeuAccentBlue),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { inner ->
+                            if (searchQuery.isEmpty()) {
+                                Text("بحث باسم العميل أو رقم الفاتورة...", fontSize = 13.5.sp, color = NeuTextMuted)
+                            }
+                            inner()
+                        }
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(22.dp)) {
+                            Icon(Icons.Default.Clear, contentDescription = "مسح", tint = NeuTextMuted, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+
+            // Stats Neumorphic Card
+            NeuCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                contentPadding = PaddingValues(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
                         Text(
                             text = "عدد الفواتير:",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            fontSize = 11.5.sp,
+                            color = NeuTextSecondary
                         )
                         Text(
                             text = "${filteredList.size} فاتورة",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 15.sp,
+                            color = NeuTextPrimary
                         )
                     }
 
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "إجمالي المبيعات:",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            fontSize = 11.5.sp,
+                            color = NeuTextSecondary
                         )
                         Text(
                             text = "${formatter.format(totalSalesSum)} ${storeConfig.currencySymbol}",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            fontWeight = FontWeight.Black,
+                            fontSize = 17.sp,
+                            color = NeuAccentBlue
                         )
                     }
                 }
@@ -138,122 +176,141 @@ fun InvoiceHistoryScreen(
                 ) {
                     Text(
                         text = "لا توجد فواتير مسجلة في السجل حتى الآن.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = NeuTextMuted,
+                        fontSize = 13.sp
                     )
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredList, key = { it.invoice.invoiceId }) { item ->
                         val inv = item.invoice
-                        Card(
+                        NeuCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { selectedInvoiceForDetail = item }
+                                .clickable { selectedInvoiceForDetail = item },
+                            shape = RoundedCornerShape(18.dp),
+                            elevation = 6.dp,
+                            contentPadding = PaddingValues(12.dp)
                         ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                        ) {
-                                            Text(
-                                                text = "#${inv.invoiceNumber}",
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // Soft invoice badge
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = NeuInsetBg
+                                    ) {
                                         Text(
-                                            text = inv.customerName,
+                                            text = "#${inv.invoiceNumber}",
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
+                                            fontSize = 12.sp,
+                                            color = NeuAccentBlue
                                         )
                                     }
-
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "${formatter.format(inv.grandTotal)} ${storeConfig.currencySymbol}",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 15.sp,
-                                        color = MaterialTheme.colorScheme.primary
+                                        text = inv.customerName,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.5.sp,
+                                        color = NeuTextPrimary
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "${formatter.format(inv.grandTotal)} ${storeConfig.currencySymbol}",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 15.sp,
+                                    color = NeuAccentBlue
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "التاريخ: ${inv.dateString} | ${inv.paymentType} (${item.items.size} أصناف)",
+                                    fontSize = 11.5.sp,
+                                    color = NeuTextSecondary
+                                )
 
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = "التاريخ: ${inv.dateString} | الدفع: ${inv.paymentType} (${item.items.size} أصناف)",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    // 1. PDF Share Button
+                                    NeuCircleButton(
+                                        onClick = {
+                                            val pdfUri = viewModel.getShareablePdfUriForInvoice(inv, item.items)
+                                            if (pdfUri != null) {
+                                                val shareIntent = com.example.ui.components.InvoicePdfHelper.createSharePdfIntent(
+                                                    context = context,
+                                                    pdfUri = pdfUri,
+                                                    invoiceNumber = inv.invoiceNumber,
+                                                    customerName = inv.customerName
+                                                )
+                                                context.startActivity(Intent.createChooser(shareIntent, "مشاركة الفاتورة كملف PDF"))
+                                            } else {
+                                                Toast.makeText(context, "تعذر إنشاء ملف PDF", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        size = 32.dp
+                                    ) {
+                                        Icon(AppIcons.Pdf, contentDescription = "مشاركة PDF", tint = NeuAccentBlue, modifier = Modifier.size(15.dp))
+                                    }
 
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        // Edit in Editor Button
-                                        IconButton(
-                                            onClick = { onEditInvoice(item) },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Edit,
-                                                contentDescription = "تعديل",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(17.dp)
-                                            )
-                                        }
+                                    // 2. Edit Button
+                                    NeuCircleButton(
+                                        onClick = { onEditInvoice(item) },
+                                        size = 32.dp
+                                    ) {
+                                        Icon(Icons.Default.Edit, contentDescription = "تعديل", tint = NeuTextPrimary, modifier = Modifier.size(15.dp))
+                                    }
 
-                                        // Print Button
-                                        IconButton(
-                                            onClick = {
-                                                try {
-                                                    val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
-                                                        context = context,
-                                                        storeConfig = storeConfig,
-                                                        invoiceNumber = inv.invoiceNumber,
-                                                        dateString = inv.dateString,
-                                                        customerName = inv.customerName,
-                                                        paymentType = inv.paymentType,
-                                                        items = item.items
-                                                    )
-                                                    if (printerState is PrinterConnectionState.Connected) {
-                                                        viewModel.printInvoiceAsBitmap(bitmap)
-                                                    } else {
-                                                        Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
-                                                        onNavigateToPrinterSetup()
-                                                    }
-                                                } catch (e: Throwable) {
-                                                    Toast.makeText(context, "خطأ في الطباعة: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                    // 3. Print Button
+                                    NeuCircleButton(
+                                        onClick = {
+                                            try {
+                                                val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
+                                                    context = context,
+                                                    storeConfig = storeConfig,
+                                                    invoiceNumber = inv.invoiceNumber,
+                                                    dateString = inv.dateString,
+                                                    customerName = inv.customerName,
+                                                    paymentType = inv.paymentType,
+                                                    items = item.items
+                                                )
+                                                if (printerState is PrinterConnectionState.Connected) {
+                                                    viewModel.printInvoiceAsBitmap(bitmap)
+                                                } else {
+                                                    Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
+                                                    onNavigateToPrinterSetup()
                                                 }
-                                            },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(AppIcons.Print, contentDescription = "طباعة", modifier = Modifier.size(17.dp))
-                                        }
+                                            } catch (e: Throwable) {
+                                                Toast.makeText(context, "خطأ في الطباعة: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        size = 32.dp
+                                    ) {
+                                        Icon(AppIcons.Print, contentDescription = "طباعة", tint = NeuTextPrimary, modifier = Modifier.size(15.dp))
+                                    }
 
-                                        // Delete Button
-                                        IconButton(
-                                            onClick = { viewModel.deleteInvoice(inv.invoiceId) },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = "حذف",
-                                                tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(17.dp)
-                                            )
-                                        }
+                                    // 4. Delete Button
+                                    NeuCircleButton(
+                                        onClick = { viewModel.deleteInvoice(inv.invoiceId) },
+                                        size = 32.dp
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "حذف", tint = NeuError, modifier = Modifier.size(15.dp))
                                     }
                                 }
                             }
@@ -264,83 +321,81 @@ fun InvoiceHistoryScreen(
         }
     }
 
-    selectedInvoiceForDetail?.let { detail ->
+    // Detail Dialog
+    selectedInvoiceForDetail?.let { item ->
+        val inv = item.invoice
         AlertDialog(
             onDismissRequest = { selectedInvoiceForDetail = null },
+            containerColor = NeuSurface,
+            title = {
+                Text(
+                    text = "تفاصيل فاتورة #${inv.invoiceNumber} - ${inv.customerName}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = NeuTextPrimary
+                )
+            },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        try {
-                            val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
-                                context = context,
-                                storeConfig = storeConfig,
-                                invoiceNumber = detail.invoice.invoiceNumber,
-                                dateString = detail.invoice.dateString,
-                                customerName = detail.invoice.customerName,
-                                paymentType = detail.invoice.paymentType,
-                                items = detail.items
-                            )
-                            if (printerState is PrinterConnectionState.Connected) {
-                                viewModel.printInvoiceAsBitmap(bitmap)
-                            } else {
-                                Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
-                                onNavigateToPrinterSetup()
-                            }
-                        } catch (e: Throwable) {
-                            Toast.makeText(context, "خطأ في الطباعة: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("طباعة حرارية")
+                    NeuButton(
+                        onClick = {
+                            val pdfUri = viewModel.getShareablePdfUriForInvoice(inv, item.items)
+                            if (pdfUri != null) {
+                                val shareIntent = com.example.ui.components.InvoicePdfHelper.createSharePdfIntent(
+                                    context = context,
+                                    pdfUri = pdfUri,
+                                    invoiceNumber = inv.invoiceNumber,
+                                    customerName = inv.customerName
+                                )
+                                context.startActivity(Intent.createChooser(shareIntent, "مشاركة الفاتورة كملف PDF"))
+                            } else {
+                                Toast.makeText(context, "تعذر إنشاء ملف PDF", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        isPrimary = true
+                    ) {
+                        Icon(AppIcons.Pdf, contentDescription = null, modifier = Modifier.size(15.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("مشاركة PDF", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+
+                    NeuButton(
+                        onClick = {
+                            onEditInvoice(item)
+                            selectedInvoiceForDetail = null
+                        },
+                        isPrimary = false
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(15.dp), tint = NeuTextPrimary)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("تعديل", color = NeuTextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        try {
-                            val bitmap = ReceiptBitmapHelper.createReceiptBitmapFromItems(
-                                context = context,
-                                storeConfig = storeConfig,
-                                invoiceNumber = detail.invoice.invoiceNumber,
-                                dateString = detail.invoice.dateString,
-                                customerName = detail.invoice.customerName,
-                                paymentType = detail.invoice.paymentType,
-                                items = detail.items
-                            )
-                            val uri = viewModel.getShareableImageUri(bitmap)
-                            if (uri != null) {
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "image/png"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(Intent.createChooser(intent, "مشاركة الفاتورة"))
-                            }
-                        } catch (e: Throwable) {
-                            Toast.makeText(context, "خطأ: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("مشاركة")
+                TextButton(onClick = { selectedInvoiceForDetail = null }) {
+                    Text("إغلاق", color = NeuTextSecondary, fontWeight = FontWeight.Bold)
                 }
             },
-            title = { Text("فاتورة #${detail.invoice.invoiceNumber}", fontWeight = FontWeight.Bold) },
             text = {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val allItems = detail.items
-                    val half = (allItems.size + 1) / 2
-                    val rightItems = allItems.take(half)
-                    val leftItems = allItems.drop(half)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .padding(4.dp)
+                ) {
+                    val half = (item.items.size + 1) / 2
+                    val rightItems = item.items.take(half)
+                    val leftItems = item.items.drop(half)
                     val maxCount = maxOf(rightItems.size, leftItems.size).coerceAtLeast(1)
-
                     val rows = (0 until maxCount).map { i ->
                         val r = rightItems.getOrNull(i)
                         val l = leftItems.getOrNull(i)
-                        DualReceiptRow(
+                        com.example.ui.viewmodels.DualReceiptRow(
                             rightDescription = r?.description ?: "",
                             rightQuantityStr = r?.quantity?.let { if (it > 0) it.toString() else "1" } ?: "1",
                             rightTotalAmountStr = r?.totalAmount?.let { if (it > 0) it.toString() else "" } ?: "",
@@ -352,13 +407,13 @@ fun InvoiceHistoryScreen(
 
                     InteractiveReceiptView(
                         storeConfig = storeConfig,
-                        invoiceNumber = detail.invoice.invoiceNumber,
+                        invoiceNumber = inv.invoiceNumber,
                         onInvoiceNumberChange = {},
-                        dateString = detail.invoice.dateString,
+                        dateString = inv.dateString,
                         onDateStringChange = {},
-                        customerName = detail.invoice.customerName,
+                        customerName = inv.customerName,
                         onCustomerNameChange = {},
-                        paymentType = detail.invoice.paymentType,
+                        paymentType = inv.paymentType,
                         onPaymentTypeChange = {},
                         dualRows = rows,
                         onUpdateRightDescription = { _, _ -> },

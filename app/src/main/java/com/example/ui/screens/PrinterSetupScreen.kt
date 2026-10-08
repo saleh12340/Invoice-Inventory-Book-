@@ -12,12 +12,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import com.example.ui.theme.AppIcons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +29,7 @@ import androidx.core.content.ContextCompat
 import com.example.data.local.StoreConfigEntity
 import com.example.printer.PrinterConnectionState
 import com.example.ui.components.ReceiptBitmapHelper
+import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import kotlinx.coroutines.launch
 
@@ -81,46 +84,68 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
     }
 
     Scaffold(
+        containerColor = NeuBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("إعدادات طابعة الفواتير (بلوتوث)", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                )
-            )
+            Surface(
+                color = NeuSurfaceRaised,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(20.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "إعدادات طابعة الفواتير (بلوتوث)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = NeuTextPrimary
+                    )
+                }
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // STATUS BANNER
-            Card(
+            // STATUS BANNER (Neumorphic Card with Central Badge like the lock in screenshot)
+            NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = when (printerState) {
-                        is PrinterConnectionState.Connected -> Color(0xFFDCFCE7)
-                        is PrinterConnectionState.Connecting -> Color(0xFFFEF9C3)
-                        is PrinterConnectionState.Error -> Color(0xFFFEE2E2)
-                        else -> MaterialTheme.colorScheme.surfaceVariant
-                    }
-                )
+                shape = RoundedCornerShape(22.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Soft UI Icon Badge
+                    NeuBadge(size = 52.dp) {
+                        Icon(
+                            AppIcons.Bluetooth,
+                            contentDescription = null,
+                            tint = when (printerState) {
+                                is PrinterConnectionState.Connected -> NeuSuccess
+                                is PrinterConnectionState.Connecting -> NeuAccentBlue
+                                else -> NeuTextMuted
+                            },
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "حالة الاتصال بالطابعة:",
-                            fontSize = 12.sp,
-                            color = Color.DarkGray
+                            fontSize = 11.5.sp,
+                            color = NeuTextSecondary
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -131,63 +156,80 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                                 else -> "غير متصل بالطابعة"
                             },
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
+                            fontSize = 14.5.sp,
                             color = when (printerState) {
-                                is PrinterConnectionState.Connected -> Color(0xFF15803D)
-                                is PrinterConnectionState.Error -> Color(0xFFB91C1C)
-                                else -> Color.Black
+                                is PrinterConnectionState.Connected -> NeuSuccess
+                                is PrinterConnectionState.Error -> NeuError
+                                else -> NeuTextPrimary
                             }
                         )
                     }
 
                     if (printerState is PrinterConnectionState.Connected) {
-                        Button(
+                        NeuButton(
                             onClick = { viewModel.bluetoothPrinterManager.disconnect() },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            isPrimary = false
                         ) {
-                            Text("قطع الاتصال", fontSize = 11.sp)
+                            Text("قطع", fontSize = 11.sp, color = NeuError, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
             // PAPER SIZE SELECTOR (58mm vs 80mm POS)
-            Card(
+            NeuCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                shape = RoundedCornerShape(20.dp),
+                contentPadding = PaddingValues(14.dp)
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = "عرض ورق الطابعة الحرارية:",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "عرض ورق الطابعة الحرارية:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp,
+                    color = NeuTextPrimary
+                )
+                Spacer(modifier = Modifier.height(10.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = selectedPaperWidthDots == 384,
-                            onClick = { selectedPaperWidthDots = 384 },
-                            label = { Text("ورق صغير 58 مم (POS-58)") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    NeuButton(
+                        onClick = { selectedPaperWidthDots = 384 },
+                        modifier = Modifier.weight(1f),
+                        isPrimary = selectedPaperWidthDots == 384
+                    ) {
+                        Text(
+                            text = "ورق 58 مم (POS-58)",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedPaperWidthDots == 384) Color.White else NeuTextPrimary
                         )
-                        FilterChip(
-                            selected = selectedPaperWidthDots == 576,
-                            onClick = { selectedPaperWidthDots = 576 },
-                            label = { Text("ورق كبير 80 مم (POS-80)") }
+                    }
+
+                    NeuButton(
+                        onClick = { selectedPaperWidthDots = 576 },
+                        modifier = Modifier.weight(1f),
+                        isPrimary = selectedPaperWidthDots == 576
+                    ) {
+                        Text(
+                            text = "ورق 80 مم (POS-80)",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedPaperWidthDots == 576) Color.White else NeuTextPrimary
                         )
                     }
                 }
             }
 
             // TEST PRINT BUTTON
-            Button(
+            NeuButton(
                 onClick = {
                     val testBitmap = ReceiptBitmapHelper.createReceiptBitmap(
                         context = context,
                         storeConfig = config,
                         invoiceNumber = 9999,
-                        dateString = "2026/10/04",
+                        dateString = "2026/10/08",
                         customerName = "تجربة طباعة الفاتورة",
                         paymentType = "نقداً",
                         dualRows = listOf(
@@ -199,105 +241,108 @@ fun PrinterSetupScreen(viewModel: InvoiceViewModel) {
                                 leftQuantityStr = "2",
                                 leftTotalAmountStr = "1000"
                             )
-                        )
+                        ),
+                        widthPx = selectedPaperWidthDots
                     )
                     viewModel.printInvoiceAsBitmap(testBitmap)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = printerState is PrinterConnectionState.Connected
+                enabled = printerState is PrinterConnectionState.Connected,
+                isPrimary = true
             ) {
-                Icon(AppIcons.Print, contentDescription = null)
+                Icon(AppIcons.Print, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("طباعة فاتورة تجريبية كصورة", fontWeight = FontWeight.Bold)
+                Text("طباعة فاتورة تجريبية كصورة", fontWeight = FontWeight.Bold, color = Color.White)
             }
 
-            HorizontalDivider()
-
+            // DEVICE LIST HEADER
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "أجهزة البلوتوث المقترنة:",
+                    text = "الأجهزة المقترنة بالهاتف (${pairedDevices.size}):",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize = 14.sp,
+                    color = NeuTextPrimary
                 )
 
-                IconButton(onClick = { checkAndRequestPermissions() }) {
-                    Icon(AppIcons.Bluetooth, contentDescription = "تحديث القائمة")
+                NeuCircleButton(
+                    onClick = { pairedDevices = viewModel.bluetoothPrinterManager.getPairedDevices() },
+                    size = 36.dp
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "تحديث", tint = NeuAccentBlue, modifier = Modifier.size(16.dp))
                 }
             }
 
             if (pairedDevices.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
+                NeuCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(16.dp)
                 ) {
                     Text(
-                        text = "لم يتم العثور على أجهزة بلوتوث مقترنة.\nيرجى اقتران الطابعة الحرارية أولاً من إعدادات البلوتوث بالجهاز.",
-                        color = Color.Gray,
-                        fontSize = 13.sp
+                        text = "لا توجد أجهزة بلوتوث مقترنة. يرجى التوجه لإعدادات الهاتف، وتشغيل البلوتوث والاقتران بالطابعة أولاً.",
+                        color = NeuTextSecondary,
+                        fontSize = 12.5.sp
                     )
                 }
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     items(pairedDevices) { device ->
-                        val isCurrentConnected = (printerState as? PrinterConnectionState.Connected)?.deviceAddress == device.address
-                        Card(
+                        NeuCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
                                     coroutineScope.launch {
                                         viewModel.bluetoothPrinterManager.connectToDevice(device)
                                     }
-                                }
+                                },
+                            shape = RoundedCornerShape(18.dp),
+                            elevation = 4.dp,
+                            contentPadding = PaddingValues(12.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        AppIcons.Print,
-                                        contentDescription = null,
-                                        tint = if (isCurrentConnected) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    NeuBadge(size = 40.dp) {
+                                        Icon(AppIcons.Print, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(18.dp))
+                                    }
+
                                     Column {
                                         Text(
                                             text = device.name ?: "طابعة غير معروفة",
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
+                                            fontSize = 14.sp,
+                                            color = NeuTextPrimary
                                         )
                                         Text(
                                             text = device.address,
-                                            fontSize = 11.sp,
-                                            color = Color.Gray
+                                            fontSize = 11.5.sp,
+                                            color = NeuTextMuted
                                         )
                                     }
                                 }
 
-                                if (isCurrentConnected) {
-                                    Badge(containerColor = Color(0xFF16A34A)) {
-                                        Text("متصل الآن", color = Color.White, modifier = Modifier.padding(4.dp))
-                                    }
-                                } else {
-                                    OutlinedButton(onClick = {
+                                NeuButton(
+                                    onClick = {
                                         coroutineScope.launch {
                                             viewModel.bluetoothPrinterManager.connectToDevice(device)
                                         }
-                                    }) {
-                                        Text("اتصال")
-                                    }
+                                    },
+                                    isPrimary = false
+                                ) {
+                                    Text("اتصال", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = NeuAccentBlue)
                                 }
                             }
                         }

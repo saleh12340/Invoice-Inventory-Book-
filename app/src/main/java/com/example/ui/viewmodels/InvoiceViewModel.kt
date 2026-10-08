@@ -15,12 +15,14 @@ import com.example.data.repository.InvoiceRepository
 import com.example.printer.BluetoothPrinterManager
 import com.example.printer.PrinterConnectionState
 import com.example.printer.ThermalImageConverter
+import com.example.ui.components.InvoicePdfHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -309,6 +311,53 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
 
     fun getShareableImageUri(bitmap: Bitmap): Uri? {
         return ThermalImageConverter.getShareableUri(getApplication(), bitmap)
+    }
+
+    fun generateInvoicePdf(): File? {
+        val config = storeConfig.value ?: StoreConfigEntity()
+        return InvoicePdfHelper.createInvoicePdf(
+            context = getApplication(),
+            storeConfig = config,
+            invoiceNumber = invoiceNumber,
+            dateString = dateString,
+            customerName = customerName,
+            paymentType = paymentType,
+            dualRows = dualRows
+        )
+    }
+
+    fun getShareableInvoicePdfUri(): Uri? {
+        val file = generateInvoicePdf() ?: return null
+        return InvoicePdfHelper.getShareablePdfUri(getApplication(), file)
+    }
+
+    fun saveInvoicePdfToDownloads(): Uri? {
+        val file = generateInvoicePdf() ?: return null
+        val uri = InvoicePdfHelper.savePdfToDownloads(getApplication(), file, "$invoiceNumber")
+        if (uri != null) {
+            _uiEventMessage.value = "تم حفظ ملف PDF في مجلد التنزيلات بنجاح!"
+        } else {
+            _uiEventMessage.value = "تعذر حفظ ملف PDF"
+        }
+        return uri
+    }
+
+    fun generateInvoicePdfFromItems(invoice: InvoiceEntity, items: List<InvoiceItemEntity>): File? {
+        val config = storeConfig.value ?: StoreConfigEntity()
+        return InvoicePdfHelper.createInvoicePdfFromItems(
+            context = getApplication(),
+            storeConfig = config,
+            invoiceNumber = invoice.invoiceNumber,
+            dateString = invoice.dateString,
+            customerName = invoice.customerName,
+            paymentType = invoice.paymentType,
+            items = items
+        )
+    }
+
+    fun getShareablePdfUriForInvoice(invoice: InvoiceEntity, items: List<InvoiceItemEntity>): Uri? {
+        val file = generateInvoicePdfFromItems(invoice, items) ?: return null
+        return InvoicePdfHelper.getShareablePdfUri(getApplication(), file)
     }
 
     fun addCatalogProductToInvoice(name: String, price: Double) {

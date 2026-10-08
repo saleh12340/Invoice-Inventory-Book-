@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -17,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,7 +28,7 @@ import com.example.data.local.StoreConfigEntity
 import com.example.printer.PrinterConnectionState
 import com.example.ui.components.InteractiveReceiptView
 import com.example.ui.components.ReceiptBitmapHelper
-import com.example.ui.theme.AppIcons
+import com.example.ui.theme.*
 import com.example.ui.viewmodels.InvoiceViewModel
 import java.text.DecimalFormat
 
@@ -47,75 +50,112 @@ fun NewInvoiceScreen(
     val formatter = DecimalFormat("#,##0.##")
 
     Scaffold(
+        containerColor = NeuBackground,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
+            // Neumorphic Top Bar
+            Surface(
+                color = NeuSurfaceRaised,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(20.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "فاتورة #${viewModel.invoiceNumber} - ${storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" }}",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            fontSize = 15.sp,
+                            color = NeuTextPrimary
                         )
                         Text(
-                            text = "فاتورة ذكية تتوسع تلقائياً مع إدخال البيانات",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "نظام الفواتير الذكي والمبيعات",
+                            fontSize = 11.sp,
+                            color = NeuTextSecondary
                         )
                     }
-                },
-                actions = {
-                    // Quick Product Catalog Pick
-                    IconButton(onClick = { showProductPickerSheet = true }) {
-                        Icon(AppIcons.Category, contentDescription = "دليل الأصناف")
-                    }
 
-                    // Printer Status Indicator
-                    IconButton(onClick = onNavigateToPrinterSetup) {
-                        when (printerState) {
-                            is PrinterConnectionState.Connected -> Icon(
-                                AppIcons.Print,
-                                contentDescription = "الطابعة متصلة",
-                                tint = Color(0xFF16A34A)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 1. Quick Product Catalog Pick
+                        NeuCircleButton(
+                            onClick = { showProductPickerSheet = true },
+                            size = 38.dp
+                        ) {
+                            Icon(
+                                AppIcons.Category,
+                                contentDescription = "دليل الأصناف",
+                                tint = NeuAccentBlue,
+                                modifier = Modifier.size(18.dp)
                             )
-                            is PrinterConnectionState.Connecting -> CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp
-                            )
-                            else -> Icon(
-                                AppIcons.PrintDisabled,
-                                contentDescription = "غير متصل بالطابعة",
-                                tint = MaterialTheme.colorScheme.error
+                        }
+
+                        // 2. Printer Status Indicator
+                        NeuCircleButton(
+                            onClick = onNavigateToPrinterSetup,
+                            size = 38.dp
+                        ) {
+                            when (printerState) {
+                                is PrinterConnectionState.Connected -> Icon(
+                                    AppIcons.Print,
+                                    contentDescription = "الطابعة متصلة",
+                                    tint = NeuSuccess,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                is PrinterConnectionState.Connecting -> CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = NeuAccentBlue
+                                )
+                                else -> Icon(
+                                    AppIcons.PrintDisabled,
+                                    contentDescription = "غير متصل بالطابعة",
+                                    tint = NeuError,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        // 3. Reset Form
+                        NeuCircleButton(
+                            onClick = { viewModel.resetForm() },
+                            size = 38.dp
+                        ) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "فاتورة جديدة",
+                                tint = NeuTextPrimary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
-
-                    // Reset Form
-                    IconButton(onClick = { viewModel.resetForm() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "فاتورة جديدة")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
-                )
-            )
+                }
+            }
         },
         bottomBar = {
-            Surface(
-                tonalElevation = 6.dp,
-                shadowElevation = 6.dp
+            // Neumorphic Bottom Action Card
+            NeuCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(22.dp),
+                contentPadding = PaddingValues(10.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                // Grand Total Display (Sunken Neumorphic Box)
+                NeuInsetBox(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    // Grand Total Banner
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -123,77 +163,75 @@ fun NewInvoiceScreen(
                             text = "المبلغ الإجمالي الكلي:",
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = NeuTextSecondary
                         )
                         Text(
                             text = "${formatter.format(viewModel.calculateGrandTotal())} ${storeConfig.currencySymbol}",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 17.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            fontWeight = FontWeight.Black,
+                            fontSize = 18.sp,
+                            color = NeuAccentBlue
                         )
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    // Action Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Neumorphic Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 1. Save Button (Soft Raised)
+                    NeuButton(
+                        onClick = { viewModel.saveInvoiceToDatabase() },
+                        modifier = Modifier.weight(1f),
+                        isPrimary = false
                     ) {
-                        // 1. Save Button
-                        Button(
-                            onClick = { viewModel.saveInvoiceToDatabase() },
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(vertical = 8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Icon(AppIcons.Save, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("حفظ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
+                        Icon(AppIcons.Save, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuTextPrimary)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("حفظ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                    }
 
-                        // 2. Thermal Print Button
-                        Button(
-                            onClick = {
-                                try {
-                                    val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
-                                        context = context,
-                                        storeConfig = storeConfig,
-                                        invoiceNumber = viewModel.invoiceNumber,
-                                        dateString = viewModel.dateString,
-                                        customerName = viewModel.customerName,
-                                        paymentType = viewModel.paymentType,
-                                        dualRows = viewModel.dualRows
-                                    )
-                                    if (printerState is PrinterConnectionState.Connected) {
-                                        viewModel.printInvoiceAsBitmap(bitmap)
-                                    } else {
-                                        Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
-                                        onNavigateToPrinterSetup()
-                                    }
-                                } catch (e: Throwable) {
-                                    Toast.makeText(context, "تعذر تجهيز الفاتورة للطباعة: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    // 2. Thermal Print Button (Vibrant #0072ff Glow)
+                    NeuButton(
+                        onClick = {
+                            try {
+                                val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
+                                    context = context,
+                                    storeConfig = storeConfig,
+                                    invoiceNumber = viewModel.invoiceNumber,
+                                    dateString = viewModel.dateString,
+                                    customerName = viewModel.customerName,
+                                    paymentType = viewModel.paymentType,
+                                    dualRows = viewModel.dualRows
+                                )
+                                if (printerState is PrinterConnectionState.Connected) {
+                                    viewModel.printInvoiceAsBitmap(bitmap)
+                                } else {
+                                    Toast.makeText(context, "الرجاء الاتصال بالطابعة أولاً من شاشة الطابعة", Toast.LENGTH_SHORT).show()
+                                    onNavigateToPrinterSetup()
                                 }
-                            },
-                            modifier = Modifier.weight(1.3f),
-                            contentPadding = PaddingValues(vertical = 8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E3A8A))
-                        ) {
-                            Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("طباعة حرارية", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
+                            } catch (e: Throwable) {
+                                Toast.makeText(context, "تعذر تجهيز الفاتورة للطباعة: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        modifier = Modifier.weight(1.3f),
+                        isPrimary = true
+                    ) {
+                        Icon(AppIcons.Print, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("طباعة حرارية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
 
-                        // 3. Save / Share Image
-                        OutlinedButton(
-                            onClick = { showPreviewDialog = true },
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(vertical = 8.dp)
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("صورة/واتساب", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
+                    // 3. Save / Share Image
+                    NeuButton(
+                        onClick = { showPreviewDialog = true },
+                        modifier = Modifier.weight(1f),
+                        isPrimary = false
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp), tint = NeuAccentBlue)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("مشاركة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
                     }
                 }
             }
@@ -219,60 +257,123 @@ fun NewInvoiceScreen(
                     paymentType = viewModel.paymentType,
                     onPaymentTypeChange = { viewModel.paymentType = it },
                     dualRows = viewModel.dualRows,
-                    onUpdateRightDescription = { idx, desc -> viewModel.updateRightDescription(idx, desc) },
-                    onUpdateRightQuantity = { idx, qty -> viewModel.updateRightQuantity(idx, qty) },
-                    onUpdateRightTotalAmount = { idx, total -> viewModel.updateRightTotalAmount(idx, total) },
-                    onUpdateLeftDescription = { idx, desc -> viewModel.updateLeftDescription(idx, desc) },
-                    onUpdateLeftQuantity = { idx, qty -> viewModel.updateLeftQuantity(idx, qty) },
-                    onUpdateLeftTotalAmount = { idx, total -> viewModel.updateLeftTotalAmount(idx, total) },
+                    onUpdateRightDescription = { idx, v -> viewModel.updateRightDescription(idx, v) },
+                    onUpdateRightQuantity = { idx, v -> viewModel.updateRightQuantity(idx, v) },
+                    onUpdateRightTotalAmount = { idx, v -> viewModel.updateRightTotalAmount(idx, v) },
+                    onUpdateLeftDescription = { idx, v -> viewModel.updateLeftDescription(idx, v) },
+                    onUpdateLeftQuantity = { idx, v -> viewModel.updateLeftQuantity(idx, v) },
+                    onUpdateLeftTotalAmount = { idx, v -> viewModel.updateLeftTotalAmount(idx, v) },
                     onRemoveRow = { idx -> viewModel.removeRow(idx) },
-                    onAddManualRow = { viewModel.addManualRow() },
-                    isEditable = true
+                    onAddManualRow = { viewModel.addManualRow() }
                 )
             }
         }
     }
 
-    // MODAL 1: PICK FROM PRODUCTS CATALOG
+    // Quick Product Picker Modal
     if (showProductPickerSheet) {
-        ModalBottomSheet(onDismissRequest = { showProductPickerSheet = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { showProductPickerSheet = false },
+            containerColor = NeuSurface
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
+                    .fillMaxHeight(0.6f)
             ) {
-                Text(
-                    text = "اختر صنفاً لإدراجه المباشر في الفاتورة",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "اختر صنفاً لإدراجه مباشرة في الفاتورة",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = NeuTextPrimary
+                    )
+                    IconButton(onClick = { showProductPickerSheet = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = NeuTextSecondary)
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(10.dp))
 
-                if (allProducts.isEmpty()) {
-                    Text("لا توجد منتجات مسجلة في دليل الأصناف.", color = Color.Gray)
+                var searchFilter by remember { mutableStateOf("") }
+                NeuInsetBox(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = NeuTextMuted, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        BasicTextField(
+                            value = searchFilter,
+                            onValueChange = { searchFilter = it },
+                            singleLine = true,
+                            textStyle = TextStyle(fontSize = 13.sp, color = NeuTextPrimary),
+                            cursorBrush = SolidColor(NeuAccentBlue),
+                            modifier = Modifier.weight(1f),
+                            decorationBox = { inner ->
+                                if (searchFilter.isEmpty()) {
+                                    Text("ابحث عن صنف...", fontSize = 13.sp, color = NeuTextMuted)
+                                }
+                                inner()
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val availableProducts = remember(allProducts, searchFilter) {
+                    if (searchFilter.isBlank()) allProducts
+                    else allProducts.filter { it.name.contains(searchFilter, ignoreCase = true) }
+                }
+
+                if (availableProducts.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = if (allProducts.isEmpty()) "لا توجد أصناف في الدليل بعد. أضف أصنافاً من تبويب 'الأصناف'." else "لم يتم العثور على نتائج.",
+                            color = NeuTextMuted,
+                            fontSize = 13.sp
+                        )
+                    }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(allProducts) { prod ->
-                            Card(
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(availableProducts) { product ->
+                            NeuCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        viewModel.addCatalogProductToInvoice(prod.name, prod.defaultUnitPrice)
+                                        viewModel.addCatalogProductToInvoice(product.name, product.defaultUnitPrice)
                                         showProductPickerSheet = false
-                                    }
+                                    },
+                                shape = RoundedCornerShape(14.dp),
+                                elevation = 4.dp,
+                                contentPadding = PaddingValues(10.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(prod.name, fontWeight = FontWeight.Bold)
+                                    Column {
+                                        Text(product.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = NeuTextPrimary)
+                                        Text(product.category, fontSize = 11.sp, color = NeuTextSecondary)
+                                    }
                                     Text(
-                                        "${formatter.format(prod.defaultUnitPrice)} ${storeConfig.currencySymbol}",
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold
+                                        text = "${formatter.format(product.defaultUnitPrice)} ${storeConfig.currencySymbol}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = NeuAccentBlue
                                     )
                                 }
                             }
@@ -283,64 +384,144 @@ fun NewInvoiceScreen(
         }
     }
 
-    // MODAL 2: FULL-SCREEN PREVIEW & SAVE/SHARE IMAGE DIALOG
+    // Invoice Image Preview & Share Dialog
     if (showPreviewDialog) {
+        val invoiceBitmap = remember(viewModel.dualRows, storeConfig) {
+            ReceiptBitmapHelper.createReceiptBitmap(
+                context = context,
+                storeConfig = storeConfig,
+                invoiceNumber = viewModel.invoiceNumber,
+                dateString = viewModel.dateString,
+                customerName = viewModel.customerName,
+                paymentType = viewModel.paymentType,
+                dualRows = viewModel.dualRows
+            )
+        }
+
         AlertDialog(
             onDismissRequest = { showPreviewDialog = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
-                            context = context,
-                            storeConfig = storeConfig,
-                            invoiceNumber = viewModel.invoiceNumber,
-                            dateString = viewModel.dateString,
-                            customerName = viewModel.customerName,
-                            paymentType = viewModel.paymentType,
-                            dualRows = viewModel.dualRows
-                        )
-                        viewModel.saveInvoiceImageToGallery(bitmap)
-                    }
+            containerColor = NeuSurface,
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("حفظ في الاستوديو")
+                    NeuBadge(size = 38.dp) {
+                        Icon(AppIcons.Pdf, contentDescription = null, tint = NeuAccentBlue, modifier = Modifier.size(20.dp))
+                    }
+                    Column {
+                        Text(
+                            text = "تصدير ومشاركة الفاتورة",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = NeuTextPrimary
+                        )
+                        Text(
+                            text = "مستند PDF عالي الجودة أو صورة PNG",
+                            fontSize = 11.sp,
+                            color = NeuTextSecondary
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 1. Share as PDF (Primary Action)
+                    NeuButton(
+                        onClick = {
+                            val pdfUri = viewModel.getShareableInvoicePdfUri()
+                            if (pdfUri != null) {
+                                val shareIntent = com.example.ui.components.InvoicePdfHelper.createSharePdfIntent(
+                                    context = context,
+                                    pdfUri = pdfUri,
+                                    invoiceNumber = viewModel.invoiceNumber,
+                                    customerName = viewModel.customerName
+                                )
+                                context.startActivity(Intent.createChooser(shareIntent, "مشاركة الفاتورة كملف PDF"))
+                            } else {
+                                Toast.makeText(context, "تعذر إنشاء ملف PDF", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        isPrimary = true
+                    ) {
+                        Icon(AppIcons.Pdf, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("مشاركة كملف PDF احترافي", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+                    }
+
+                    // 2. Secondary Row: Save PDF / Share Image / Save Image
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Save PDF to Downloads
+                        NeuButton(
+                            onClick = {
+                                viewModel.saveInvoicePdfToDownloads()
+                            },
+                            modifier = Modifier.weight(1f),
+                            isPrimary = false
+                        ) {
+                            Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuAccentBlue)
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("حفظ PDF", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        }
+
+                        // Share Image
+                        NeuButton(
+                            onClick = {
+                                val uri = viewModel.getShareableImageUri(invoiceBitmap)
+                                if (uri != null) {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "image/png"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "مشاركة صورة الفاتورة"))
+                                } else {
+                                    Toast.makeText(context, "تعذر تجهيز الصورة للمشاركة", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            isPrimary = false
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuTextPrimary)
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("مشاركة صورة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        }
+
+                        // Save Image to Gallery
+                        NeuButton(
+                            onClick = {
+                                viewModel.saveInvoiceImageToGallery(invoiceBitmap)
+                            },
+                            modifier = Modifier.weight(1f),
+                            isPrimary = false
+                        ) {
+                            Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(14.dp), tint = NeuTextPrimary)
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("حفظ صورة", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeuTextPrimary)
+                        }
+                    }
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
-                            context = context,
-                            storeConfig = storeConfig,
-                            invoiceNumber = viewModel.invoiceNumber,
-                            dateString = viewModel.dateString,
-                            customerName = viewModel.customerName,
-                            paymentType = viewModel.paymentType,
-                            dualRows = viewModel.dualRows
-                        )
-                        val shareUri = viewModel.getShareableImageUri(bitmap)
-                        if (shareUri != null) {
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "image/png"
-                                putExtra(Intent.EXTRA_STREAM, shareUri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(Intent.createChooser(intent, "مشاركة صورة الفاتورة"))
-                        }
-                    }
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("مشاركة واتساب")
+                TextButton(onClick = { showPreviewDialog = false }) {
+                    Text("إغلاق", color = NeuTextSecondary, fontWeight = FontWeight.Bold)
                 }
             },
-            title = { Text("صورة الفاتورة الحرارية", fontWeight = FontWeight.Bold) },
             text = {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val rowsToPreview = viewModel.dualRows.filterNot { it.isCompletelyEmpty }.ifEmpty {
-                        listOf(viewModel.dualRows.firstOrNull() ?: com.example.ui.viewmodels.DualReceiptRow())
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .padding(4.dp)
+                ) {
                     InteractiveReceiptView(
                         storeConfig = storeConfig,
                         invoiceNumber = viewModel.invoiceNumber,
@@ -351,7 +532,9 @@ fun NewInvoiceScreen(
                         onCustomerNameChange = {},
                         paymentType = viewModel.paymentType,
                         onPaymentTypeChange = {},
-                        dualRows = rowsToPreview,
+                        dualRows = viewModel.dualRows.filterNot { it.isCompletelyEmpty }.ifEmpty {
+                            listOf(com.example.ui.viewmodels.DualReceiptRow())
+                        },
                         onUpdateRightDescription = { _, _ -> },
                         onUpdateRightQuantity = { _, _ -> },
                         onUpdateRightTotalAmount = { _, _ -> },

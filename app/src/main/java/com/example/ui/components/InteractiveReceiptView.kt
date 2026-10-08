@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -184,10 +185,16 @@ fun InteractiveReceiptView(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(18.dp),
+                ambientColor = Color(0xFFA3B1C6).copy(alpha = 0.50f),
+                spotColor = Color(0xFFA3B1C6).copy(alpha = 0.65f)
+            )
+            .clip(RoundedCornerShape(18.dp))
             .background(ReceiptPaperWhite)
-            .border(1.2.dp, ReceiptInkNavy, RoundedCornerShape(6.dp))
-            .padding(4.dp)
+            .border(1.dp, Color(0xFFCBD5E1).copy(alpha = 0.70f), RoundedCornerShape(18.dp))
+            .padding(5.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
