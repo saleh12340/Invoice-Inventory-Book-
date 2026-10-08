@@ -157,9 +157,10 @@ object ReceiptBitmapHelper {
         val leftStartX = padding
 
         // Sub-column Widths (RTL: Total Amount 30%, Qty 18%, Description 52%)
-        val colTotalW = halfWidth * 0.30f
-        val colQtyW = halfWidth * 0.18f
-        val colDescW = halfWidth * 0.52f
+        val colTotalW = halfWidth * 0.22f
+        val colUnitW = halfWidth * 0.20f
+        val colQtyW = halfWidth * 0.14f
+        val colDescW = halfWidth * 0.44f
 
         // Top line for column headers
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
@@ -169,6 +170,7 @@ object ReceiptBitmapHelper {
 
         // Right Half Headers (RTL)
         canvas.drawText("القيمة", rightStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("الوحدة", rightStartX + colDescW + colQtyW + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
         canvas.drawText("العدد", rightStartX + colDescW + (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
         canvas.drawText("البيان", rightStartX + colDescW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
@@ -176,6 +178,7 @@ object ReceiptBitmapHelper {
         // Left Half Headers (RTL)
         smallBoldPaint.textAlign = Paint.Align.CENTER
         canvas.drawText("القيمة", leftStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("الوحدة", leftStartX + colDescW + colQtyW + (colUnitW / 2f), currentY + (17f * scale), smallBoldPaint)
         canvas.drawText("العدد", leftStartX + colDescW + (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
         canvas.drawText("البيان", leftStartX + colDescW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
@@ -213,6 +216,11 @@ object ReceiptBitmapHelper {
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
+            val rightQtyValue = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
+            val rightUnitValue = if (rightQtyValue > 0.0) row.rightTotal / rightQtyValue else 0.0
+            if (rightUnitValue > 0.0) {
+                canvas.drawText(formatter.format(rightUnitValue), rightStartX + colDescW + colQtyW + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
+            }
             if (row.rightQuantityStr.isNotBlank()) {
                 canvas.drawText(row.rightQuantityStr, rightStartX + colDescW + (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
@@ -231,6 +239,11 @@ object ReceiptBitmapHelper {
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
+            val leftQtyValue = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
+            val leftUnitValue = if (leftQtyValue > 0.0) row.leftTotal / leftQtyValue else 0.0
+            if (leftUnitValue > 0.0) {
+                canvas.drawText(formatter.format(leftUnitValue), leftStartX + colDescW + colQtyW + (colUnitW / 2f), rowY + (17f * scale), rowDescPaint)
+            }
             if (row.leftQuantityStr.isNotBlank()) {
                 canvas.drawText(row.leftQuantityStr, leftStartX + colDescW + (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
