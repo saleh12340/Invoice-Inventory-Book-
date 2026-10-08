@@ -47,12 +47,22 @@ fun NewInvoiceScreen(
     val storeConfigState by viewModel.storeConfig.collectAsState()
     val storeConfig = storeConfigState ?: StoreConfigEntity()
     val allProducts by viewModel.allProducts.collectAsState()
+    val allInvoices by viewModel.allInvoices.collectAsState()
     val printerState by viewModel.printerState.collectAsState()
 
     var showProductPickerSheet by remember { mutableStateOf(false) }
     var showPreviewDialog by remember { mutableStateOf(false) }
 
     val formatter = DecimalFormat("#,##0.##")
+    val customerSuggestions = remember(allInvoices, viewModel.customerName) {
+        val q = viewModel.customerName.trim()
+        if (q.isBlank()) emptyList() else allInvoices.asSequence()
+            .map { it.invoice.customerName.trim() }
+            .filter { it.isNotBlank() && it != "عميل نقدي" && it.contains(q, ignoreCase = true) }
+            .distinct()
+            .take(4)
+            .toList()
+    }
 
     Scaffold(
         containerColor = NeuBackground,
@@ -280,7 +290,9 @@ fun NewInvoiceScreen(
                     onUpdateLeftQuantity = { idx, v -> viewModel.updateLeftQuantity(idx, v) },
                     onUpdateLeftTotalAmount = { idx, v -> viewModel.updateLeftTotalAmount(idx, v) },
                     onRemoveRow = { idx -> viewModel.removeRow(idx) },
-                    onAddManualRow = { viewModel.addManualRow() }
+                    onAddManualRow = { viewModel.addManualRow() },
+                    customerSuggestions = customerSuggestions,
+                    onCustomerSuggestionClick = { selected -> viewModel.customerName = selected }
                 )
             }
         }
