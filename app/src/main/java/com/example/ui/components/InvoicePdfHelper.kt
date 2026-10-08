@@ -22,8 +22,8 @@ import java.io.OutputStream
 object InvoicePdfHelper {
 
     /**
-     * Generates a professional, high-resolution PDF document for an invoice.
-     * Saved in the app's cache directory ready for instant sharing via WhatsApp/Email/Telegram.
+     * Generates a crystal-clear, true 4K Ultra-HD PDF document for an invoice (2160px native resolution).
+     * Saved in the app's cache directory ready for instant sharing via WhatsApp/Email/Telegram without any blur.
      */
     fun createInvoicePdf(
         context: Context,
@@ -35,7 +35,7 @@ object InvoicePdfHelper {
         dualRows: List<DualReceiptRow>
     ): File? {
         return try {
-            // 1. Render high-density 576px receipt bitmap
+            // 1. Render true 4K Ultra-HD 2160px receipt bitmap
             val bitmap = ReceiptBitmapHelper.createReceiptBitmap(
                 context = context,
                 storeConfig = storeConfig,
@@ -44,28 +44,24 @@ object InvoicePdfHelper {
                 customerName = customerName,
                 paymentType = paymentType,
                 dualRows = dualRows,
-                widthPx = 576
+                widthPx = 2160 // 4K Ultra-HD native rendering
             )
 
-            // 2. Prepare PDF Page Dimensions (Matching receipt aspect ratio with clean margins)
-            val pdfWidth = 460
-            val aspectRatio = bitmap.height.toFloat() / bitmap.width.toFloat()
-            val pdfHeight = (pdfWidth * aspectRatio).toInt().coerceAtLeast(300)
+            // 2. Prepare 4K PDF Page Dimensions (1:1 with 2160px bitmap for zero quality loss)
+            val pdfWidth = 2160
+            val pdfHeight = bitmap.height
 
             val document = PdfDocument()
             val pageInfo = PdfDocument.PageInfo.Builder(pdfWidth, pdfHeight, 1).create()
             val page = document.startPage(pageInfo)
 
             val canvas: Canvas = page.canvas
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+                isDither = true
+            }
 
-            // Draw bitmap crisp and centered to page
-            canvas.drawBitmap(
-                Bitmap.createScaledBitmap(bitmap, pdfWidth, pdfHeight, true),
-                0f,
-                0f,
-                paint
-            )
+            // Draw 4K bitmap at 1:1 scale
+            canvas.drawBitmap(bitmap, 0f, 0f, paint)
 
             document.finishPage(page)
 
@@ -90,7 +86,7 @@ object InvoicePdfHelper {
     }
 
     /**
-     * Generates an invoice PDF directly from saved database items.
+     * Generates an invoice PDF directly from saved database items in 4K resolution.
      */
     fun createInvoicePdfFromItems(
         context: Context,
@@ -150,7 +146,7 @@ object InvoicePdfHelper {
             type = "application/pdf"
             putExtra(Intent.EXTRA_STREAM, pdfUri)
             putExtra(Intent.EXTRA_SUBJECT, "فاتورة رقم #$invoiceNumber - $customerName")
-            putExtra(Intent.EXTRA_TEXT, "مرفق فاتورة إلكترونية رسمية رقم #$invoiceNumber للعميل $customerName.")
+            putExtra(Intent.EXTRA_TEXT, "مرفق فاتورة إلكترونية رسمية عالية الجودة 4K رقم #$invoiceNumber للعميل $customerName.")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
     }

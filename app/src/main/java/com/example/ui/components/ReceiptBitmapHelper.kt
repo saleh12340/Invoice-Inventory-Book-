@@ -13,7 +13,8 @@ object ReceiptBitmapHelper {
 
     /**
      * Renders a crisp, high-contrast 2-column receipt without heavy table boxes or gridlines.
-     * Uses solid bold, thick black text optimized for 58mm / 80mm ESC/POS thermal printers.
+     * Supports arbitrary resolutions including native 384px (58mm ESC/POS thermal), 576px (80mm),
+     * and 2160px (4K Ultra-HD for PDF / Gallery Export) with perfect proportional scaling.
      */
     fun createReceiptBitmap(
         context: Context,
@@ -23,8 +24,11 @@ object ReceiptBitmapHelper {
         customerName: String,
         paymentType: String,
         dualRows: List<DualReceiptRow>,
-        widthPx: Int = 384 // Default 384px (58mm 1-to-1 native thermal resolution)
+        widthPx: Int = 384 // Default 384px (58mm native thermal resolution)
     ): Bitmap {
+        val baseWidth = 384f
+        val scale = widthPx.toFloat() / baseWidth
+
         // Filter out completely empty rows
         val activeRows = dualRows.filterNot { it.isCompletelyEmpty }.ifEmpty {
             listOf(DualReceiptRow(rightDescription = "صنف", rightQuantityStr = "1", rightTotalAmountStr = "0"))
@@ -34,46 +38,46 @@ object ReceiptBitmapHelper {
         val leftSubtotal = activeRows.sumOf { it.leftTotal }
         val grandTotal = rightSubtotal + leftSubtotal
 
-        // Dynamic height calculations
-        val headerHeight = 90f
-        val tableHeaderHeight = 26f
-        val rowHeight = 24f
+        // Dynamic height calculations scaled proportionally
+        val headerHeight = 90f * scale
+        val tableHeaderHeight = 26f * scale
+        val rowHeight = 25f * scale
         val tableHeight = activeRows.size * rowHeight
-        val subtotalsHeight = 24f
-        val grandTotalHeight = 30f
-        val footerHeight = 22f
-        val padding = 8f
-        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + subtotalsHeight + grandTotalHeight + footerHeight + 20f).toInt()
+        val subtotalsHeight = 24f * scale
+        val grandTotalHeight = 32f * scale
+        val footerHeight = 22f * scale
+        val padding = 8f * scale
+        val totalHeight = (headerHeight + tableHeaderHeight + tableHeight + subtotalsHeight + grandTotalHeight + footerHeight + (20f * scale)).toInt().coerceAtLeast(300)
 
         val bitmap = Bitmap.createBitmap(widthPx, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
 
-        // Ultra-Bold, Solid Black Paints (No gray, no alpha, maximum thermal heat transfer)
+        // Ultra-Bold, Solid Black Paints (Proportionally scaled font sizes & stroke widths)
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 21f
+            textSize = 21f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
 
         val boldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 14f
+            textSize = 14f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
 
         val heavyBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 15f
+            textSize = 15f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
 
         val smallBoldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 12f
+            textSize = 11.5f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
@@ -81,13 +85,13 @@ object ReceiptBitmapHelper {
         val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
-            strokeWidth = 1.8f
+            strokeWidth = 1.8f * scale
         }
 
         val thinLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
-            strokeWidth = 1.0f
+            strokeWidth = 1.0f * scale
         }
 
         val solidBlackFill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -97,7 +101,14 @@ object ReceiptBitmapHelper {
 
         val whiteTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = 14.5f
+            textSize = 14f * scale
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isFakeBoldText = true
+        }
+
+        val grandTotalNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = 16.5f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
@@ -108,40 +119,39 @@ object ReceiptBitmapHelper {
         // 1. TOP HEADER (اسم المحل، الهاتف، نوع الدفع، الرقم والتاريخ)
         val storeName = storeConfig.storeNameArabic.ifEmpty { "بقالة العزي" }
         titlePaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(storeName, widthPx - padding, currentY + 20f, titlePaint)
+        canvas.drawText(storeName, widthPx - padding, currentY + (20f * scale), titlePaint)
 
         // Store phone
         val phoneText = "ج: ${storeConfig.phone1.ifEmpty { "772437314" }}"
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(phoneText, widthPx - padding, currentY + 38f, smallBoldPaint)
+        canvas.drawText(phoneText, widthPx - padding, currentY + (38f * scale), smallBoldPaint)
 
         // Payment type (Center)
         boldPaint.textAlign = Paint.Align.CENTER
         val payText = if (paymentType == "نقداً") "[✓] نقداً   [ ] أجل" else "[ ] نقداً   [✓] أجل"
-        canvas.drawText(payText, widthPx / 2f, currentY + 20f, boldPaint)
+        canvas.drawText(payText, widthPx / 2f, currentY + (20f * scale), boldPaint)
 
         // Invoice Number & Date (Left)
         heavyBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("الرقم: #$invoiceNumber", padding, currentY + 20f, heavyBoldPaint)
+        canvas.drawText("الرقم: #$invoiceNumber", padding, currentY + (20f * scale), heavyBoldPaint)
 
         smallBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("التاريخ: $dateString", padding, currentY + 38f, smallBoldPaint)
+        canvas.drawText("التاريخ: $dateString", padding, currentY + (38f * scale), smallBoldPaint)
 
-        currentY += 46f
+        currentY += 46f * scale
 
         // Separator line under store info
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
-        currentY += 6f
+        currentY += 6f * scale
 
         // 2. CUSTOMER NAME LINE ("المطلوب من الأخ")
         boldPaint.textAlign = Paint.Align.RIGHT
         val custText = "المطلوب من الأخ: ${customerName.ifEmpty { "عميل نقدي" }}"
-        canvas.drawText(custText, widthPx - padding, currentY + 14f, boldPaint)
+        canvas.drawText(custText, widthPx - padding, currentY + (14f * scale), boldPaint)
 
-        currentY += 22f
+        currentY += 22f * scale
 
         // 3. TWO-COLUMN TABLE LAYOUT (WITHOUT CELL BOXES OR SQUARES)
-        // Split contentWidth into 2 halves: Right Half (50%) & Left Half (50%)
         val halfWidth = contentWidth / 2f
         val rightStartX = padding + halfWidth
         val leftStartX = padding
@@ -158,17 +168,17 @@ object ReceiptBitmapHelper {
         smallBoldPaint.textAlign = Paint.Align.CENTER
 
         // Right Half Headers (RTL)
-        canvas.drawText("القيمة", rightStartX + halfWidth - (colTotalW / 2f), currentY + 17f, smallBoldPaint)
-        canvas.drawText("العدد", rightStartX + colDescW + (colQtyW / 2f), currentY + 17f, smallBoldPaint)
+        canvas.drawText("القيمة", rightStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("العدد", rightStartX + colDescW + (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("البيان", rightStartX + colDescW - 2f, currentY + 17f, smallBoldPaint)
+        canvas.drawText("البيان", rightStartX + colDescW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
 
         // Left Half Headers (RTL)
         smallBoldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("القيمة", leftStartX + halfWidth - (colTotalW / 2f), currentY + 17f, smallBoldPaint)
-        canvas.drawText("العدد", leftStartX + colDescW + (colQtyW / 2f), currentY + 17f, smallBoldPaint)
+        canvas.drawText("القيمة", leftStartX + halfWidth - (colTotalW / 2f), currentY + (17f * scale), smallBoldPaint)
+        canvas.drawText("العدد", leftStartX + colDescW + (colQtyW / 2f), currentY + (17f * scale), smallBoldPaint)
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("البيان", leftStartX + colDescW - 2f, currentY + 17f, smallBoldPaint)
+        canvas.drawText("البيان", leftStartX + colDescW - (2f * scale), currentY + (17f * scale), smallBoldPaint)
 
         // Vertical divider between right and left columns in the header
         canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + tableHeaderHeight, thinLinePaint)
@@ -181,14 +191,14 @@ object ReceiptBitmapHelper {
         // 4. DATA ROWS (Clean text alignment without any boxes or rectangles)
         val rowDescPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 13f
+            textSize = 12.5f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
 
         val rowTotalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
-            textSize = 13.5f
+            textSize = 13.5f * scale
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isFakeBoldText = true
         }
@@ -199,35 +209,37 @@ object ReceiptBitmapHelper {
             // Right Section Cells (Total -> Qty -> Desc)
             rowTotalPaint.textAlign = Paint.Align.CENTER
             if (row.rightTotalAmountStr.isNotBlank()) {
-                canvas.drawText(row.rightTotalAmountStr, rightStartX + halfWidth - (colTotalW / 2f), rowY + 17f, rowTotalPaint)
+                canvas.drawText(row.rightTotalAmountStr, rightStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
             if (row.rightQuantityStr.isNotBlank()) {
-                canvas.drawText(row.rightQuantityStr, rightStartX + colDescW + (colQtyW / 2f), rowY + 17f, rowDescPaint)
+                canvas.drawText(row.rightQuantityStr, rightStartX + colDescW + (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT
             if (row.rightDescription.isNotBlank()) {
-                val desc = if (row.rightDescription.length > 16) row.rightDescription.take(15) + ".." else row.rightDescription
-                canvas.drawText(desc, rightStartX + colDescW - 2f, rowY + 17f, rowDescPaint)
+                val maxChars = (18 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
+                val desc = if (row.rightDescription.length > maxChars) row.rightDescription.take(maxChars - 1) + ".." else row.rightDescription
+                canvas.drawText(desc, rightStartX + colDescW - (2f * scale), rowY + (17f * scale), rowDescPaint)
             }
 
             // Left Section Cells (Total -> Qty -> Desc)
             rowTotalPaint.textAlign = Paint.Align.CENTER
             if (row.leftTotalAmountStr.isNotBlank()) {
-                canvas.drawText(row.leftTotalAmountStr, leftStartX + halfWidth - (colTotalW / 2f), rowY + 17f, rowTotalPaint)
+                canvas.drawText(row.leftTotalAmountStr, leftStartX + halfWidth - (colTotalW / 2f), rowY + (17f * scale), rowTotalPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.CENTER
             if (row.leftQuantityStr.isNotBlank()) {
-                canvas.drawText(row.leftQuantityStr, leftStartX + colDescW + (colQtyW / 2f), rowY + 17f, rowDescPaint)
+                canvas.drawText(row.leftQuantityStr, leftStartX + colDescW + (colQtyW / 2f), rowY + (17f * scale), rowDescPaint)
             }
 
             rowDescPaint.textAlign = Paint.Align.RIGHT
             if (row.leftDescription.isNotBlank()) {
-                val desc = if (row.leftDescription.length > 16) row.leftDescription.take(15) + ".." else row.leftDescription
-                canvas.drawText(desc, leftStartX + colDescW - 2f, rowY + 17f, rowDescPaint)
+                val maxChars = (18 * (if (scale > 1f) 1.2f else 1.0f)).toInt()
+                val desc = if (row.leftDescription.length > maxChars) row.leftDescription.take(maxChars - 1) + ".." else row.leftDescription
+                canvas.drawText(desc, leftStartX + colDescW - (2f * scale), rowY + (17f * scale), rowDescPaint)
             }
 
             // Central vertical divider between columns
@@ -239,13 +251,13 @@ object ReceiptBitmapHelper {
             currentY += rowHeight
         }
 
-        currentY += 2f
+        currentY += 2f * scale
 
         // 5. SUBTOTALS (كل شيء إجمالي لحاله)
-        boldPaint.textSize = 12.5f
+        boldPaint.textSize = 12.5f * scale
         boldPaint.textAlign = Paint.Align.CENTER
-        canvas.drawText("إجمالي اليمين: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}", rightStartX + (halfWidth / 2f), currentY + 16f, boldPaint)
-        canvas.drawText("إجمالي اليسار: ${formatter.format(leftSubtotal)} ${storeConfig.currencySymbol}", leftStartX + (halfWidth / 2f), currentY + 16f, boldPaint)
+        canvas.drawText("إجمالي اليمين: ${formatter.format(rightSubtotal)} ${storeConfig.currencySymbol}", rightStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
+        canvas.drawText("إجمالي اليسار: ${formatter.format(leftSubtotal)} ${storeConfig.currencySymbol}", leftStartX + (halfWidth / 2f), currentY + (16f * scale), boldPaint)
 
         // Central divider in subtotals
         canvas.drawLine(padding + halfWidth, currentY, padding + halfWidth, currentY + subtotalsHeight, thinLinePaint)
@@ -253,33 +265,30 @@ object ReceiptBitmapHelper {
 
         // Dividing line before Grand Total
         canvas.drawLine(padding, currentY, widthPx - padding, currentY, linePaint)
-        currentY += 3f
+        currentY += 3f * scale
 
         // 6. GRAND TOTAL DIRECTLY UNDERNEATH (المبلغ الإجمالي العام)
-        // Solid black bar for ultra-high contrast on thermal paper
         canvas.drawRect(padding, currentY, widthPx - padding, currentY + grandTotalHeight, solidBlackFill)
 
         whiteTextPaint.textAlign = Paint.Align.RIGHT
-        whiteTextPaint.textSize = 13.5f
-        canvas.drawText("المبلغ الإجمالي العام:", widthPx - padding - 6f, currentY + 20f, whiteTextPaint)
+        canvas.drawText("المبلغ الإجمالي العام:", widthPx - padding - (6f * scale), currentY + (21f * scale), whiteTextPaint)
 
-        whiteTextPaint.textAlign = Paint.Align.LEFT
-        whiteTextPaint.textSize = 16f
-        canvas.drawText("${formatter.format(grandTotal)} ${storeConfig.currencySymbol}", padding + 6f, currentY + 20f, whiteTextPaint)
+        grandTotalNumberPaint.textAlign = Paint.Align.LEFT
+        canvas.drawText("${formatter.format(grandTotal)} ${storeConfig.currencySymbol}", padding + (6f * scale), currentY + (21f * scale), grandTotalNumberPaint)
 
-        currentY += grandTotalHeight + 4f
+        currentY += grandTotalHeight + (4f * scale)
 
         // 7. ULTRA-COMPACT SIGNATURES & DISCLAIMER
-        smallBoldPaint.textSize = 10f
+        smallBoldPaint.textSize = 10f * scale
         smallBoldPaint.textAlign = Paint.Align.RIGHT
-        canvas.drawText("ت.البائع: ......", widthPx - padding, currentY + 14f, smallBoldPaint)
+        canvas.drawText("ت.البائع: ......", widthPx - padding, currentY + (14f * scale), smallBoldPaint)
 
         smallBoldPaint.textAlign = Paint.Align.CENTER
-        val note = storeConfig.defaultDisclaimerNote.take(28)
-        canvas.drawText(note, widthPx / 2f, currentY + 14f, smallBoldPaint)
+        val note = storeConfig.defaultDisclaimerNote.take(35)
+        canvas.drawText(note, widthPx / 2f, currentY + (14f * scale), smallBoldPaint)
 
         smallBoldPaint.textAlign = Paint.Align.LEFT
-        canvas.drawText("ت.المشتري: ......", padding, currentY + 14f, smallBoldPaint)
+        canvas.drawText("ت.المشتري: ......", padding, currentY + (14f * scale), smallBoldPaint)
 
         return bitmap
     }

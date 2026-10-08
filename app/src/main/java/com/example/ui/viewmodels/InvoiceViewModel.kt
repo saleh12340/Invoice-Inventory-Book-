@@ -382,6 +382,49 @@ class InvoiceViewModel(application: Application) : AndroidViewModel(application)
         _uiEventMessage.value = "تم إدراج الصنف في الفاتورة"
     }
 
+    fun addQuickItem(name: String, quantityStr: String, totalAmountStr: String) {
+        val cleanName = name.trim().ifEmpty { "صنف" }
+        val cleanQty = quantityStr.trim().ifEmpty { "1" }
+        val cleanTot = totalAmountStr.trim().ifEmpty { "0" }
+
+        var placed = false
+        for (i in dualRows.indices) {
+            val row = dualRows[i]
+            if (!row.hasRightData) {
+                dualRows[i] = row.copy(
+                    rightDescription = cleanName,
+                    rightQuantityStr = cleanQty,
+                    rightTotalAmountStr = cleanTot
+                )
+                placed = true
+                break
+            } else if (!row.hasLeftData) {
+                dualRows[i] = row.copy(
+                    leftDescription = cleanName,
+                    leftQuantityStr = cleanQty,
+                    leftTotalAmountStr = cleanTot
+                )
+                placed = true
+                break
+            }
+        }
+
+        if (!placed) {
+            dualRows.add(
+                DualReceiptRow(
+                    rightDescription = cleanName,
+                    rightQuantityStr = cleanQty,
+                    rightTotalAmountStr = cleanTot
+                )
+            )
+        }
+
+        if (!dualRows.last().isCompletelyEmpty) {
+            dualRows.add(DualReceiptRow())
+        }
+        _uiEventMessage.value = "تمت إضافة الصنف $cleanName بنجاح!"
+    }
+
     fun addCatalogProduct(name: String, price: Double) {
         viewModelScope.launch {
             if (name.isNotBlank()) {

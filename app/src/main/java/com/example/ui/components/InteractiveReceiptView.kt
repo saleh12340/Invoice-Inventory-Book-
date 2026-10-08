@@ -373,6 +373,16 @@ fun InteractiveReceiptView(
 
             // 4. DATA ROWS WITH CRISP GRID CELLS AND TOUCH HIGHLIGHTS
             dualRows.forEachIndexed { index, row ->
+                val rightQty = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
+                val rightTot = row.rightTotalAmountStr.toDoubleOrNull() ?: 0.0
+                val rightUnitPrice = if (rightQty > 1.0 && rightTot > 0.0) rightTot / rightQty else 0.0
+                val rightBadge = if (rightUnitPrice > 0.0) "سعر الحبة: ${formatter.format(rightUnitPrice)}" else null
+
+                val leftQty = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
+                val leftTot = row.leftTotalAmountStr.toDoubleOrNull() ?: 0.0
+                val leftUnitPrice = if (leftQty > 1.0 && leftTot > 0.0) leftTot / leftQty else 0.0
+                val leftBadge = if (leftUnitPrice > 0.0) "سعر الحبة: ${formatter.format(leftUnitPrice)}" else null
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -403,11 +413,12 @@ fun InteractiveReceiptView(
                         isEditable = isEditable,
                         weight = 1.35f,
                         align = TextAlign.Start,
-                        placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "اكتب صنف..." else ""
+                        placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "اكتب صنف..." else "",
+                        subBadge = rightBadge
                     )
 
                     // Vertical Divider between dual columns
-                    Box(modifier = Modifier.width(1.5.dp).height(24.dp).background(ReceiptInkNavy.copy(alpha = 0.35f)))
+                    Box(modifier = Modifier.width(1.5.dp).height(if (rightBadge != null || leftBadge != null) 28.dp else 24.dp).background(ReceiptInkNavy.copy(alpha = 0.35f)))
 
                     // LEFT SECTION CELLS
                     DataCell(
@@ -431,7 +442,8 @@ fun InteractiveReceiptView(
                         onValueChange = { onUpdateLeftDescription(index, it) },
                         isEditable = isEditable,
                         weight = 1.35f,
-                        align = TextAlign.Start
+                        align = TextAlign.Start,
+                        subBadge = leftBadge
                     )
                 }
             }
@@ -582,7 +594,8 @@ private fun RowScope.DataCell(
     align: TextAlign = TextAlign.Center,
     textColor: Color = Color.Black,
     fontWeight: FontWeight = FontWeight.Normal,
-    placeholder: String = ""
+    placeholder: String = "",
+    subBadge: String? = null
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -590,7 +603,7 @@ private fun RowScope.DataCell(
     Box(
         modifier = Modifier
             .weight(weight)
-            .height(28.dp)
+            .height(if (subBadge != null) 31.dp else 28.dp)
             .padding(horizontal = 0.8.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(
@@ -610,35 +623,56 @@ private fun RowScope.DataCell(
             else -> Alignment.Center
         }
     ) {
-        if (isEditable) {
-            AutoSelectBasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                onFocusChange = { isFocused = it },
-                textStyle = TextStyle(
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = when (align) {
+                TextAlign.Start -> Alignment.Start
+                TextAlign.End -> Alignment.End
+                else -> Alignment.CenterHorizontally
+            }
+        ) {
+            if (isEditable) {
+                AutoSelectBasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    onFocusChange = { isFocused = it },
+                    textStyle = TextStyle(
+                        fontSize = 9.sp,
+                        fontWeight = if (isFocused) FontWeight.Bold else fontWeight,
+                        color = if (isFocused) ReceiptInkBlueAccent else textColor,
+                        textAlign = align
+                    ),
+                    keyboardOptions = if (isNumeric) KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
+                                      else KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                    singleLine = true,
+                    placeholder = placeholder,
+                    textAlign = align,
+                    focusRequester = focusRequester,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Text(
+                    text = value,
                     fontSize = 9.sp,
-                    fontWeight = if (isFocused) FontWeight.Bold else fontWeight,
-                    color = if (isFocused) ReceiptInkBlueAccent else textColor,
-                    textAlign = align
-                ),
-                keyboardOptions = if (isNumeric) KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
-                                  else KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                singleLine = true,
-                placeholder = placeholder,
-                textAlign = align,
-                focusRequester = focusRequester,
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else {
-            Text(
-                text = value,
-                fontSize = 9.sp,
-                fontWeight = fontWeight,
-                color = textColor,
-                textAlign = align,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                    fontWeight = fontWeight,
+                    color = textColor,
+                    textAlign = align,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            if (!subBadge.isNullOrBlank()) {
+                Text(
+                    text = subBadge,
+                    fontSize = 6.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ReceiptInkBlueAccent,
+                    maxLines = 1,
+                    lineHeight = 7.5.sp
+                )
+            }
         }
     }
 }
