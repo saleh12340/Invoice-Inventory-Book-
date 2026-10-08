@@ -370,136 +370,47 @@ fun InteractiveReceiptView(
                 Spacer(modifier = Modifier.height(2.dp))
             }
 
-            // 3. TABLE HEADER: ORDER FROM RIGHT TO LEFT (HIGH VISIBILITY)
-            // Right Section: [ القيمة | العدد | التفاصيل ]
-            // Divider
-            // Left Section:  [ القيمة | العدد | التفاصيل ]
+            // 3. INVOICE-LIKE ITEM GRID: each invoice line is a real two-level line.
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
-                    .background(ReceiptInkNavy)
-                    .padding(vertical = 1.dp),
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp))
+                    .border(0.8.dp, ReceiptInkNavy.copy(alpha = 0.45f), RoundedCornerShape(7.dp))
+                    .background(ReceiptInkNavy),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // RIGHT SECTION (RTL: Total -> Qty -> Desc)
-                HeaderCell(text = "المبلغ", weight = 0.70f)
-                HeaderCell(text = "السعر", weight = 0.70f)
-                HeaderCell(text = "العدد", weight = 0.42f)
-                HeaderCell(text = "الصنف", weight = 1.12f)
-
-                // High-visibility vertical separator
-                Box(modifier = Modifier.width(1.5.dp).height(14.dp).background(Color.White))
-
-                // LEFT SECTION (RTL: Total -> Unit -> Qty -> Item)
-                HeaderCell(text = "القيمة", weight = 0.72f)
-                HeaderCell(text = "سعر الوحدة", weight = 0.72f)
-                HeaderCell(text = "العدد", weight = 0.42f)
-                HeaderCell(text = "الصنف", weight = 1.18f)
+                HeaderCell("المبلغ", 0.70f); HeaderCell("السعر", 0.70f); HeaderCell("العدد", 0.42f); HeaderCell("البيان", 1.12f)
+                Box(Modifier.width(1.5.dp).height(20.dp).background(Color.White))
+                HeaderCell("المبلغ", 0.72f); HeaderCell("السعر", 0.72f); HeaderCell("العدد", 0.42f); HeaderCell("البيان", 1.18f)
             }
 
-            // 4. DATA ROWS WITH CRISP GRID CELLS AND TOUCH HIGHLIGHTS
             dualRows.forEachIndexed { index, row ->
                 val rightQty = row.rightQuantityStr.toDoubleOrNull() ?: 1.0
                 val rightTot = row.rightTotalAmountStr.toDoubleOrNull() ?: 0.0
                 val rightUnitPrice = if (rightQty > 0.0 && rightTot > 0.0) rightTot / rightQty else 0.0
-                val rightBadge = if (rightUnitPrice > 0.0) "سعر الحبة: ${formatter.format(rightUnitPrice)}" else null
-
                 val leftQty = row.leftQuantityStr.toDoubleOrNull() ?: 1.0
                 val leftTot = row.leftTotalAmountStr.toDoubleOrNull() ?: 0.0
                 val leftUnitPrice = if (leftQty > 0.0 && leftTot > 0.0) leftTot / leftQty else 0.0
-                val leftBadge = if (leftUnitPrice > 0.0) "سعر الحبة: ${formatter.format(leftUnitPrice)}" else null
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .border(0.7.dp, Color(0xFFCBD5E1), RoundedCornerShape(7.dp))
+                        .background(Color.White)
                 ) {
-                    // RIGHT SECTION CELLS
-                    DataCell(
-                        value = row.rightTotalAmountStr,
-                        onValueChange = { onUpdateRightTotalAmount(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.72f,
-                        isNumeric = true,
-                        textColor = ReceiptInkNavy,
-                        fontWeight = FontWeight.Bold,
-                        placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "0" else ""
-                    )
-                    DataCell(
-                        value = if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "",
-                        onValueChange = {},
-                        isEditable = false,
-                        weight = 0.72f,
-                        isNumeric = true,
-                        textColor = ReceiptInkBlueAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DataCell(
-                        value = row.rightQuantityStr,
-                        onValueChange = { onUpdateRightQuantity(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.42f,
-                        isNumeric = true
-                    )
-                    DataCell(
-                        value = row.rightDescription,
-                        onValueChange = { onUpdateRightDescription(index, it) },
-                        isEditable = isEditable,
-                        weight = 1.12f,
-                        align = TextAlign.Start,
-                        placeholder = if (isEditable && index == dualRows.lastIndex && row.isCompletelyEmpty) "الصنف" else "",
-                        subBadge = null,
-                        autoFocus = isEditable && index == dualRows.lastIndex && index > 0 &&
-                            dualRows[index - 1].leftDescription.isNotBlank() &&
-                            dualRows[index - 1].leftTotalAmountStr.isNotBlank()
-                    )
-
-                    // Vertical Divider between dual columns
-                    Box(modifier = Modifier.width(1.5.dp).height(30.dp).background(ReceiptInkNavy.copy(alpha = 0.35f)))
-
-                    // LEFT SECTION CELLS
-                    DataCell(
-                        value = row.leftTotalAmountStr,
-                        onValueChange = { onUpdateLeftTotalAmount(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.72f,
-                        isNumeric = true,
-                        textColor = ReceiptInkNavy,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DataCell(
-                        value = if (leftUnitPrice > 0.0) formatter.format(leftUnitPrice) else "",
-                        onValueChange = {},
-                        isEditable = false,
-                        weight = 0.72f,
-                        isNumeric = true,
-                        textColor = ReceiptInkBlueAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DataCell(
-                        value = row.leftQuantityStr,
-                        onValueChange = { onUpdateLeftQuantity(index, it) },
-                        isEditable = isEditable,
-                        weight = 0.42f,
-                        isNumeric = true
-                    )
-                    DataCell(
-                        value = row.leftDescription,
-                        onValueChange = { onUpdateLeftDescription(index, it) },
-                        isEditable = isEditable,
-                        weight = 1.18f,
-                        align = TextAlign.Start,
-                        subBadge = null,
-                        autoFocus = isEditable &&
-                            row.rightDescription.isNotBlank() &&
-                            row.rightTotalAmountStr.isNotBlank() &&
-                            row.leftDescription.isBlank()
-                    )
+                    Row(Modifier.fillMaxWidth().height(32.dp), verticalAlignment = Alignment.CenterVertically) {
+                        DataCell(row.rightTotalAmountStr, { onUpdateRightTotalAmount(index, it) }, isEditable, 0.70f, true, textColor = ReceiptInkNavy, fontWeight = FontWeight.Bold, placeholder = if (isEditable && row.isCompletelyEmpty) "0" else "")
+                        DataCell(if (rightUnitPrice > 0.0) formatter.format(rightUnitPrice) else "", {}, false, 0.70f, true, textColor = ReceiptInkBlueAccent, fontWeight = FontWeight.Bold)
+                        DataCell(row.rightQuantityStr, { onUpdateRightQuantity(index, it) }, isEditable, 0.42f, true)
+                        DataCell(row.rightDescription, { onUpdateRightDescription(index, it) }, isEditable, 1.12f, align = TextAlign.Start, placeholder = if (isEditable && row.isCompletelyEmpty) "الصنف" else "")
+                    }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(ReceiptInkNavy.copy(alpha = 0.22f)))
+                    Row(Modifier.fillMaxWidth().height(32.dp), verticalAlignment = Alignment.CenterVertically) {
+                        DataCell(row.leftTotalAmountStr, { onUpdateLeftTotalAmount(index, it) }, isEditable, 0.72f, true, textColor = ReceiptInkNavy, fontWeight = FontWeight.Bold)
+                        DataCell(if (leftUnitPrice > 0.0) formatter.format(leftUnitPrice) else "", {}, false, 0.72f, true, textColor = ReceiptInkBlueAccent, fontWeight = FontWeight.Bold)
+                        DataCell(row.leftQuantityStr, { onUpdateLeftQuantity(index, it) }, isEditable, 0.42f, true)
+                        DataCell(row.leftDescription, { onUpdateLeftDescription(index, it) }, isEditable, 1.18f, align = TextAlign.Start, autoFocus = isEditable && row.rightDescription.isNotBlank() && row.rightTotalAmountStr.isNotBlank() && row.leftDescription.isBlank())
+                    }
                 }
             }
-
             Spacer(modifier = Modifier.height(2.dp))
 
             // 5. TOTALS SECTION:
