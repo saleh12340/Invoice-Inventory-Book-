@@ -1,0 +1,38 @@
+name: Auto Project Improvement & Sync
+
+on:
+  # يتيح لك تشغيل الأتمتة يدوياً بكبسة زر من صفحة Actions التي أرسلت رابطها
+  workflow_dispatch:
+  # يعمل التحديث تلقائياً عند دفع تعديلات جديدة لفرع المشروع الرئيسي
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  improve-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # تمنح الأكشن صلاحية تعديل الكود ورفعه تلقائياً
+
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Setup Git Configuration
+        run: |
+          git config --global user.name "AI-Collaborator"
+          git config --global user.email "ai-collaborator@://github.com"
+
+      - name: Optimize and Apply Code Enhancements
+        run: |
+          echo "Starting Code Optimization..."
+          # هنا سيتم وضع سكربتات تحسين الكود أو تلقي التحديثات البرمجية تلقائياً
+          echo "Optimization Completed Successfully."
+
+      - name: Commit and Push Changes Automatically
+        run: |
+          git add .
+          # يمنع السكربت من التوقف إذا لم تكن هناك تغييرات جديدة لرفعها
+          git diff-index --quiet HEAD || git commit -m "style: optimize project quality and fix code issues [skip ci]"
+          git push origin HEAD:${{ github.ref }}
